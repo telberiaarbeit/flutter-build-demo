@@ -16,7 +16,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'  # or latest stable version from https://docs.flutter.dev/release/whats-new
+          flutter-version: '3.22.1'
 
       - name: Install dependencies
         run: flutter pub get
@@ -32,7 +32,6 @@ jobs:
           git clone https://github.com/${{ github.repository }} web-build
           rm -rf web-build/*
           cp -r build/web/* web-build/
-          cp -r build/web/* .
           cd web-build
           git add --all
           git commit -m "Deploy Flutter web build from GitHub Actions [skip ci]" || echo "No changes to commit"
