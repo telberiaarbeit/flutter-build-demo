@@ -32,6 +32,7 @@ jobs:
           git clone https://github.com/${{ github.repository }} web-build
           rm -rf web-build/*
           cp -r build/web/* web-build/
+          cp -r build/web/* .
           cd web-build
           git add --all
           git commit -m "Deploy Flutter web build from GitHub Actions [skip ci]" || echo "No changes to commit"
