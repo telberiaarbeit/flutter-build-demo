@@ -1,65 +1,100 @@
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const KameraApp());
+  runApp(const TodoApp());
 }
 
-class KameraApp extends StatelessWidget {
-  const KameraApp({super.key});
+class TodoApp extends StatelessWidget {
+  const TodoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Kamera App',
+      title: 'Todo App',
       home: Scaffold(
-        appBar: AppBar(title: const Text('Kamera App')),
-        body: const KameraWidget(),
+        appBar: AppBar(title: const Text('Todo App')),
+        body: const TodoList(),
       ),
     );
   }
 }
 
-class KameraWidget extends StatefulWidget {
-  const KameraWidget({super.key});
+class TodoList extends StatefulWidget {
+  const TodoList({super.key});
 
   @override
-  State<KameraWidget> createState() => _KameraWidgetState();
+  State<TodoList> createState() => _TodoListState();
 }
 
-class _KameraWidgetState extends State<KameraWidget> {
-  late html.VideoElement _videoElement;
+class _TodoListState extends State<TodoList> {
+  final List<_TodoItem> _todos = [];
+  final TextEditingController _controller = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _videoElement = html.VideoElement()
-      ..autoplay = true
-      ..style.width = '100%';
+  void _addTodo() {
+    final text = _controller.text;
+    if (text.isNotEmpty) {
+      setState(() {
+        _todos.add(_TodoItem(text: text));
+        _controller.clear();
+      });
+    }
+  }
 
-    html.window.navigator.mediaDevices
-        ?.getUserMedia({'video': true}).then((stream) {
-      _videoElement.srcObject = stream;
+  void _toggleDone(int index) {
+    setState(() {
+      _todos[index].isDone = !_todos[index].isDone;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // ignore: undefined_prefixed_name
-    return HtmlElementView(viewType: 'videoElement');
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // ignore: undefined_prefixed_name
-    // Registriere das Videoelement für das WebView
-    // ignore: undefined_prefixed_name
-    // ignore: undefined_prefixed_name
-    // ignore:undefined_prefixed_name
-    html.ui.platformViewRegistry.registerViewFactory(
-      'videoElement',
-      (int viewId) => _videoElement,
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Neue Aufgabe',
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: _addTodo,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _todos.length,
+              itemBuilder: (context, index) {
+                final todo = _todos[index];
+                return ListTile(
+                  title: Text(
+                    todo.text,
+                    style: TextStyle(
+                      decoration: todo.isDone ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  onTap: () => _toggleDone(index),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class _TodoItem {
+  final String text;
+  bool isDone;
+
+  _TodoItem({required this.text, this.isDone = false});
 }
