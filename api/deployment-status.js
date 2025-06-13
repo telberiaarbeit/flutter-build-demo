@@ -9,21 +9,20 @@ const REPO_OWNER = 'telberiaarbeit';
 const REPO_NAME = 'flutter-build-demo';
 const BRANCH = 'web-build';
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const POLL_INTERVAL_MS = 3000;
+const MAX_ATTEMPTS = 40; // 40 × 3s = 2 minutes max
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Only GET allowed' });
   }
 
-  const maxAttempts = 20; // 20 x 5s = 100s timeout
-  let attempt = 0;
+  try {
+    let attempt = 0;
+    let latestRun, gitStatus, gitConclusion, gitSha;
 
-  while (attempt < maxAttempts) {
-    attempt++;
-
-    try {
-      // Check GitHub Actions status
+    // Poll GitHub Actions until it completes or times out
+    while (attempt < MAX_ATTEMPTS) {
       const githubResp = await fetch(
         `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
         {
@@ -33,51 +32,52 @@ export default async function handler(req, res) {
         }
       );
       const githubData = await githubResp.json();
-      const latestRun = githubData.workflow_runs?.[0];
+      latestRun = githubData.workflow_runs?.[0];
 
-      const gitStatus = latestRun?.status;
-      const gitConclusion = latestRun?.conclusion;
-      const gitSha = latestRun?.head_sha;
+      gitStatus = latestRun?.status;
+      gitConclusion = latestRun?.conclusion;
+      gitSha = latestRun?.head_sha;
 
-      // If GitHub hasn't finished yet, wait and retry
-      if (gitStatus !== 'completed' || gitConclusion !== 'success') {
-        await sleep(5000);
-        continue;
-      }
+      if (gitStatus === 'completed') break;
 
-      // Check Vercel deploy status
-      const vercelResp = await fetch(
-        `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=1`,
-        {
-          headers: {
-            Authorization: `Bearer ${VERCEL_TOKEN}`,
-          },
-        }
-      );
-      const vercelData = await vercelResp.json();
-      const latestDeployment = vercelData.deployments?.[0];
-
-      const vercelState = latestDeployment?.state;
-      const vercelSha = latestDeployment?.meta?.githubCommitSha;
-
-      const bothReady = vercelState === 'READY' && gitSha === vercelSha;
-
-      if (bothReady) {
-        return res.status(200).json({
-          status: 'READY',
-          deploymentUrl: `https://${latestDeployment.url}`,
-        });
-      }
-
-      // Git done, but Vercel not yet ready – wait
-      await sleep(5000);
-
-    } catch (err) {
-      console.error('Error during deploy check:', err);
-      return res.status(500).json({ error: 'Error checking deployment status' });
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      attempt++;
     }
-  }
 
-  // Timeout reached
-  return res.status(202).json({ status: 'IN_PROGRESS', deploymentUrl: null });
+    if (gitStatus !== 'completed' || gitConclusion !== 'success') {
+      return res.status(200).json({
+        status: gitStatus,
+        deploymentUrl: null,
+      });
+    }
+
+    // Now fetch latest Vercel deployment
+    const vercelResp = await fetch(
+      `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=1`,
+      {
+        headers: {
+          Authorization: `Bearer ${VERCEL_TOKEN}`,
+        },
+      }
+    );
+    const vercelData = await vercelResp.json();
+    const latestDeployment = vercelData.deployments?.[0];
+
+    const vercelState = latestDeployment?.state;
+    const vercelSha = latestDeployment?.meta?.githubCommitSha;
+
+    const bothSuccess =
+      gitConclusion === 'success' &&
+      vercelState === 'READY' &&
+      gitSha === vercelSha;
+
+    return res.status(200).json({
+      status: bothSuccess ? 'READY' : vercelState || 'UNKNOWN',
+      deploymentUrl: bothSuccess ? latestDeployment.url : null,
+    });
+
+  } catch (error) {
+    console.error('Error checking deploy status:', error);
+    res.status(500).json({ error: 'Failed to check deployment status' });
+  }
 }
