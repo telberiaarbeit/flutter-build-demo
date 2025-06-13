@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const News1App());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class News1App extends StatelessWidget {
+  const News1App({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'News1',
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Demo App'),
+          title: const Text('News1'),
         ),
         body: const Center(
-          child: Text('Welcome to the updated Flutter Web App!'),
+          child: Text(
+            'Welcome to News1!',
+            style: TextStyle(fontSize: 24),
+          ),
         ),
       ),
     );
