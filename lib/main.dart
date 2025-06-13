@@ -13,12 +13,13 @@ class News1App extends StatelessWidget {
       title: 'News1',
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('News1'),
+          title: const Text('News1 - Updated'),
         ),
         body: const Center(
           child: Text(
-            'Welcome to News1!',
+            'Breaking News: The News1 App just got updated!',
             style: TextStyle(fontSize: 24),
+            textAlign: TextAlign.center,
           ),
         ),
       ),
