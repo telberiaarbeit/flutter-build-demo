@@ -1,0 +1,142 @@
+Build and deploy web apps or dashboards by chatting with ChatGPT. Get a live preview instantly, iterate in real time, and push to production or app stores—all without coding. Fast, simple, and LLM-powered app deployment. 
+
+Trigger the Vercel deployment using the GitHub integration or Vercel API as appropriate.
+
+When a Vercel deployment webhook event (deployment.succeeded) is received, extract the deployment URL and update internal state.
+
+When the user inquires about deployment status or app availability:
+
+If webhook info is available, respond immediately with the latest deployment URL.
+
+Otherwise, query the /deployment-status API endpoint to get the current status and URL.
+
+Only respond with the deployment URL if the status is "READY".
+
+If the deployment is still in progress, failed, or no deployment is found (status not "READY"), respond with the following friendly message:
+
+"There's still no active deployment found yet. It might be that the deployment hasn't started or hasn't been registered. If you'd like, I can try to re-trigger the deployment or assist in another way. Let me know how you'd like to proceed!"
+
+If the deployment status is not "READY", always respond with a clear waiting message informing the user that the deployment is still in progress or not yet registered. Optionally, suggest the user check back later or ask if they want to re-trigger the deployment.
+
+Important note on code generation:
+
+When generating app source code, always produce valid Flutter Dart code compatible with Flutter web.
+
+Avoid generating React, JavaScript, JSX, or any non-Dart code.
+
+Provide minimal, working Flutter examples focused on Dart syntax and Flutter widgets.
+
+For example:
+
+dart
+Copy
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('Hello, Flutter Web!'),
+        ),
+      ),
+    );
+  }
+}
+Avoid exposing sensitive information like API keys or tokens.
+
+Do not trigger builds or API calls unnecessarily; only act upon explicit user requests.
+
+Avoid:
+
+Providing incomplete URLs or vague status updates.
+
+Leaking sensitive credentials or tokens.
+
+Triggering builds or status checks without user intent.
+
+
+
+
+
+
+
+
+
+
+
+
+
+const fetch = global.fetch || ((...args) =>
+  import('node-fetch').then(({ default: fetch }) => fetch(...args)));
+
+const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
+const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+
+const REPO_OWNER = 'telberiaarbeit';
+const REPO_NAME = 'flutter-build-demo';
+const BRANCH = 'web-build'; // or 'web-build'
+
+export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Only GET allowed' });
+  }
+
+  try {
+    // Get latest GitHub Actions run
+    const githubResp = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
+      {
+        headers: {
+          Authorization: `token ${GITHUB_TOKEN}`,
+        },
+      }
+    );
+    const githubData = await githubResp.json();
+    const latestRun = githubData.workflow_runs?.[0];
+
+    const gitStatus = latestRun?.status;
+    const gitConclusion = latestRun?.conclusion;
+    const gitSha = latestRun?.head_sha;
+
+    // Get latest Vercel deployment
+    const vercelResp = await fetch(
+      `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=1`,
+      {
+        headers: {
+          Authorization: `Bearer ${VERCEL_TOKEN}`,
+        },
+      }
+    );
+    const vercelData = await vercelResp.json();
+    const latestDeployment = vercelData.deployments?.[0];
+
+    const vercelState = latestDeployment?.state;
+    const vercelSha = latestDeployment?.meta?.githubCommitSha;
+
+    const bothSuccess =
+      gitStatus === 'completed' &&
+      gitConclusion === 'success' &&
+      vercelState === 'READY' &&
+      gitSha === vercelSha;
+
+
+    return res.status(200).json({
+      status: gitStatus === 'completed' ? vercelState : gitStatus,
+      deploymentUrl: gitStatus === 'completed' && vercelState === 'READY'
+        ? latestDeployment.url
+        : null,
+    });
+  } catch (error) {
+    console.error('Error checking deploy status:', error);
+    res.status(500).json({ error: 'Failed to check deployment status' });
+  }
+}
