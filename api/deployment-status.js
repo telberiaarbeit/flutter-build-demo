@@ -55,7 +55,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       status: gitStatus === 'completed' ? vercelState : gitStatus,
-      deploymentUrl: `https://${latestDeployment.url}`,
+      deploymentUrl: gitStatus === 'completed' && vercelState === 'READY'
+        ? latestDeployment.url
+        : null,
     });
   } catch (error) {
     console.error('Error checking deploy status:', error);
