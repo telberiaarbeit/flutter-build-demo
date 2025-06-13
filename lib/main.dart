@@ -9,13 +9,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: Scaffold(
         body: Center(
-          child: Text(
-            'Hello, World!',
-            style: TextStyle(fontSize: 24),
-          ),
+          child: Text('Hello, Flutter Web!'),
         ),
       ),
     );
