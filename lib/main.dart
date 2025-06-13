@@ -11,9 +11,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: Center(
+        appBar: AppBar(title: const Text('Hello App')),
+        body: const Center(
           child: Text(
-            'Hello, World!',
+            'Hello, Flutter Web!',
             style: TextStyle(fontSize: 24),
           ),
         ),
