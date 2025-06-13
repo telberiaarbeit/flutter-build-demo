@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const News1App());
+  runApp(const Patrick11App());
 }
 
-class News1App extends StatelessWidget {
-  const News1App({super.key});
+class Patrick11App extends StatelessWidget {
+  const Patrick11App({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'News1',
+      title: 'Patrick11',
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('News1 - Updated'),
+          title: const Text('Welcome to Patrick11'),
         ),
         body: const Center(
           child: Text(
-            'Breaking News: The News1 App just got updated!',
+            'Hello, this is the Patrick11 app!',
             style: TextStyle(fontSize: 24),
-            textAlign: TextAlign.center,
           ),
         ),
       ),
