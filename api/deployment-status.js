@@ -52,17 +52,11 @@ export default async function handler(req, res) {
       vercelState === 'READY' &&
       gitSha === vercelSha;
 
-    if (bothSuccess) {
-      return res.status(200).json({
-        status: latestDeployment.state,
-        deploymentUrl: `https://${latestDeployment.url}`,
-      });
-    } else {
-      return res.status(200).json({
-        status: 'IN_PROGRESS',
-        deploymentUrl: null,
-      });
-    }
+
+    return res.status(200).json({
+      status: gitStatus,
+      deploymentUrl: `https://${latestDeployment.url}`,
+    });
   } catch (error) {
     console.error('Error checking deploy status:', error);
     res.status(500).json({ error: 'Failed to check deployment status' });
