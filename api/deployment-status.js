@@ -7,7 +7,7 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 const REPO_OWNER = 'telberiaarbeit';
 const REPO_NAME = 'flutter-build-demo';
-const BRANCH = 'main'; // or 'web-build'
+const BRANCH = 'web-build'; // or 'web-build'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
 
     return res.status(200).json({
-      status: gitStatus,
+      status: gitStatus === 'completed' ? vercelState : gitStatus,
       deploymentUrl: `https://${latestDeployment.url}`,
     });
   } catch (error) {
