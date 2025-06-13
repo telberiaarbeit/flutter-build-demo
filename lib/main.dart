@@ -1,53 +1,83 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const ColorSwitcherApp());
+  runApp(const InventoryApp());
 }
 
-class ColorSwitcherApp extends StatelessWidget {
-  const ColorSwitcherApp({super.key});
+class InventoryApp extends StatelessWidget {
+  const InventoryApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: ColorSwitcher(),
+      home: InventoryScreen(),
     );
   }
 }
 
-class ColorSwitcher extends StatefulWidget {
-  const ColorSwitcher({super.key});
+class InventoryScreen extends StatefulWidget {
+  const InventoryScreen({super.key});
 
   @override
-  State<ColorSwitcher> createState() => _ColorSwitcherState();
+  State<InventoryScreen> createState() => _InventoryScreenState();
 }
 
-class _ColorSwitcherState extends State<ColorSwitcher> {
-  Color _backgroundColor = Colors.white;
+class _InventoryScreenState extends State<InventoryScreen> {
+  final List<String> _items = [];
+  final TextEditingController _controller = TextEditingController();
 
-  void _changeColor(Color color) {
+  void _addItem() {
+    final text = _controller.text;
+    if (text.isNotEmpty) {
+      setState(() {
+        _items.add(text);
+        _controller.clear();
+      });
+    }
+  }
+
+  void _removeItem(int index) {
     setState(() {
-      _backgroundColor = color;
+      _items.removeAt(index);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _backgroundColor,
-      appBar: AppBar(title: const Text('Farbschalter')),
-      body: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+      appBar: AppBar(title: const Text('Inventory App')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
           children: [
-            ElevatedButton(
-              onPressed: () => _changeColor(Colors.green),
-              child: const Text('Grün'),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                      labelText: 'Add Item',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: _addItem,
+                ),
+              ],
             ),
-            const SizedBox(width: 20),
-            ElevatedButton(
-              onPressed: () => _changeColor(Colors.black),
-              child: const Text('Schwarz'),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _items.length,
+                itemBuilder: (context, index) => ListTile(
+                  title: Text(_items[index]),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => _removeItem(index),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
