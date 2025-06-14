@@ -1,4 +1,4 @@
-name: Flutter Web Build & Copy to Root
+name: Flutter Web Build & Commit
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - '**'
 
 jobs:
-  build:
+  build-and-commit:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,19 +21,24 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Flutter Web (default output to build/web)
+      - name: Build Flutter Web
         run: flutter build web --release
 
-      - name: Copy build output to root
-        run: |
-          cp -r build/web/* .
-
-      - name: Commit and push copied build files
+      - name: Commit build output to same branch
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
           git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
+          git config --global user.email "github-actions@github.com"
+
+          # Setup remote with PAT
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
+
+          # Copy web build to root or wherever you want it committed
+          cp -r build/web/* .
+
           git add .
-          git commit -m "Update root with latest Flutter web build" || echo "Nothing to commit"
+          git commit -m "Update root with latest Flutter web build [skip ci]" || echo "No changes to commit"
           git push origin HEAD
+          echo "Build output committed to branch ${{ github.ref }}"
+          echo "Build output URL: https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
