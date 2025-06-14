@@ -1,18 +1,16 @@
-name: Flutter Web Build & Deploy
+name: Flutter Web Build to Root
 
 on:
   push:
     branches:
-      - main
-
-
+      - main  # Run this workflow only on web-build branch
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source code
+      - name: Checkout source
         uses: actions/checkout@v3
 
       - name: Setup Flutter
@@ -23,31 +21,5 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Flutter Web
-        run: flutter build web --release
-
-      - name: Prepare deployment branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-
-          git clone --depth 1 --branch web-build https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} web-build || \
-          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} web-build
-
-          # Remove only old Flutter web static files (not /api)
-          rm -rf web-build/assets web-build/canvaskit web-build/flutter.js web-build/flutter_bootstrap.js web-build/flutter_service_worker.js web-build/index.html
-
-          # Copy Flutter web build files
-          cp -r build/web/* web-build/
-          cp -r build/web/* .
-          # Copy the /api folder with serverless API routes
-          cp -r api web-build/
-
-          cd web-build
-          git add --all
-          git commit -m "Deploy Flutter web build + API from GitHub Actions [skip ci]" || echo "No changes to commit"
-          git push origin web-build --force
+      - name: Build Flutter Web to root
+        run: flutter build web --release --output ./
