@@ -3,7 +3,7 @@ name: Flutter Web Build & Push to Same Branch
 on:
   push:
     branches:
-      - '**' # Run on all branches
+      - '**'  # Run on all branches
 
 jobs:
   build-and-push:
@@ -24,7 +24,7 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release
 
-            - name: Commit and push build output
+      - name: Commit and push build output
         env:
           GIT_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           BRANCH: ${{ github.ref_name }}
@@ -36,6 +36,4 @@ jobs:
 
           git add .
           git commit -m "Update web build output for branch $BRANCH [skip ci]" || echo "No changes to commit"
-
           git push https://x-access-token:${GIT_TOKEN}@github.com/${{ github.repository }} HEAD:$BRANCH
-
