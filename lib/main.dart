@@ -1,25 +1,18 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const HelloPicasoApp());
+  runApp(const MyApp());
 }
 
-class HelloPicasoApp extends StatelessWidget {
-  const HelloPicasoApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Hello Picaso',
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Hello Picaso'),
-        ),
-        body: const Center(
-          child: Text(
-            'Welcome to Hello Picaso!',
-            style: TextStyle(fontSize: 24),
-          ),
+        body: Center(
+          child: Text('Hello Hoang Luke111', style: TextStyle(fontSize: 24)),
         ),
       ),
     );
