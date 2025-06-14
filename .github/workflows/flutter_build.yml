@@ -1,12 +1,14 @@
-name: Flutter Web Build & Push to Same Branch
+name: Flutter Web Build & Deploy
 
 on:
   push:
     branches:
-      - '**'  # Run on all branches
+      - hoang
+
+
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,16 +26,28 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release
 
-      - name: Commit and push build output
+      - name: Prepare deployment branch
         env:
-          GIT_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          BRANCH: ${{ github.ref_name }}
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
 
-          cp -r build/web/* .
+          git clone --depth 1 --branch hoang https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} web-build || \
+          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} web-build
 
-          git add .
-          git commit -m "Update web build output for branch $BRANCH [skip ci]" || echo "No changes to commit"
-          git push https://x-access-token:${GIT_TOKEN}@github.com/${{ github.repository }} HEAD:$BRANCH
+          # Remove only old Flutter web static files (not /api)
+          rm -rf web-build/assets web-build/canvaskit web-build/flutter.js web-build/flutter_bootstrap.js web-build/flutter_service_worker.js web-build/index.html
+
+          # Copy Flutter web build files
+          cp -r build/web/* web-build/
+          cp -r build/web/* .
+          # Copy the /api folder with serverless API routes
+          cp -r api web-build/
+
+          cd web-build
+          git add --all
+          git commit -m "Deploy Flutter web build + API from GitHub Actions [skip ci]" || echo "No changes to commit"
+          git push origin hoang --force
