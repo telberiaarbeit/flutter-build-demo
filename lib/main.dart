@@ -12,10 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         body: Center(
-          child: Text(
-            'Hello World 1',
-            style: TextStyle(fontSize: 24),
-          ),
+          child: Text('Hello Hoang Luke', style: TextStyle(fontSize: 24)),
         ),
       ),
     );
