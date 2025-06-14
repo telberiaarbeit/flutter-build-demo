@@ -11,11 +11,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Only POST allowed' });
   }
 
-  const { code, branch: inputBranch } = req.body || {};
-  const branch = inputBranch || 'web-build';
-
-
-  if (!code || !branch) {
+  const { code, secret_code } = req.body || {};
+  if (!code || !secret_code) {
     return res.status(400).json({ error: 'Missing Flutter code or branch name' });
   }
 
@@ -25,7 +22,7 @@ export default async function handler(req, res) {
   };
 
   const fileUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
-  const branchUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/${branch}`;
+  const branchUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/${secret_code}`;
 
   // Step 1: Check if branch exists
   let branchExists = true;
