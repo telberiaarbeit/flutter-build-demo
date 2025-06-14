@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         body: Center(
           child: Text(
-            'WORK NOW',
+            'WORK NOW 2',
             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
         ),
