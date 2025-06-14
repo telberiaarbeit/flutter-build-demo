@@ -66,16 +66,7 @@ export default async function handler(req, res) {
       gitStatus,
       gitConclusion,
       gitSha,
-      vercelState: matchedDeployment?.state,
-      vercelSha: matchedDeployment?.meta?.githubCommitSha,
-      vercelBranch: matchedDeployment?.meta?.githubBranch || matchedDeployment?.name,
-      vercelTarget: matchedDeployment?.target,
-      vercelName: matchedDeployment?.name,
-      vercelCreatedAt: matchedDeployment?.createdAt,
-      vercelUpdatedAt: matchedDeployment?.updatedAt,
-      vercelUrl: matchedDeployment?.url,
-      vercelId: matchedDeployment?.uid,
-      vercelMeta: matchedDeployment?.meta || {},
+      vercelData
     });
 
   } catch (error) {
