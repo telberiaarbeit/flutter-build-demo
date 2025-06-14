@@ -74,6 +74,8 @@ export default async function handler(req, res) {
       vercelCreatedAt: matchedDeployment?.createdAt,
       vercelUpdatedAt: matchedDeployment?.updatedAt,
       vercelUrl: matchedDeployment?.url,
+      vercelId: matchedDeployment?.uid,
+      vercelMeta: matchedDeployment?.meta || {},
     });
 
   } catch (error) {
