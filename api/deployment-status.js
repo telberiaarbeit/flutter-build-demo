@@ -19,27 +19,42 @@ export default async function handler(req, res) {
   }
 
   try {
-    const maxRetries = 12; // Wait max 60s
+    const maxRetries = 12; // 60 seconds total (5s interval)
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
-    // Fetch GitHub info once
-    const githubResp = await fetch(
-      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
-      {
-        headers: { Authorization: `token ${GITHUB_TOKEN}` },
-      }
-    );
-    const githubData = await githubResp.json();
-    const latestRun = githubData.workflow_runs?.[0];
-    const gitStatus = latestRun?.status;
-    const gitConclusion = latestRun?.conclusion;
-    const gitSha = latestRun?.head_sha;
+    let gitStatus = null;
+    let gitConclusion = null;
+    let gitSha = null;
 
-    // No GitHub run? Return
-    if (!gitSha) {
-      return res.status(200).json({ status: 'NO_DEPLOY', message: 'No GitHub run found for this branch.' });
+    // Wait for GitHub Actions to complete
+    for (let i = 0; i < maxRetries; i++) {
+      const githubResp = await fetch(
+        `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
+        {
+          headers: { Authorization: `token ${GITHUB_TOKEN}` },
+        }
+      );
+      const githubData = await githubResp.json();
+      const latestRun = githubData.workflow_runs?.[0];
+      gitStatus = latestRun?.status;
+      gitConclusion = latestRun?.conclusion;
+      gitSha = latestRun?.head_sha;
+
+      if (gitStatus === 'completed') break;
+      await delay(5000);
     }
 
+    if (gitStatus !== 'completed' || gitConclusion !== 'success' || !gitSha) {
+      return res.status(200).json({
+        status: 'DEPLOYING',
+        message: 'GitHub Actions not completed or failed.',
+        gitStatus,
+        gitConclusion,
+        gitSha,
+      });
+    }
+
+    // Now poll Vercel for deployment
     let matchedDeployment = null;
     for (let i = 0; i < maxRetries; i++) {
       const vercelResp = await fetch(
@@ -60,19 +75,11 @@ export default async function handler(req, res) {
       if (matchedDeployment?.state === 'READY') break;
       if (!matchedDeployment || matchedDeployment.state === 'ERROR') break;
 
-      await delay(5000); // wait 5 seconds before retrying
-      console.log(`Retrying... (${i + 1}/${maxRetries})`);
+      await delay(5000);
     }
 
     return res.status(200).json({
-      status:
-        gitStatus === 'completed' &&
-        gitConclusion === 'success' &&
-        matchedDeployment?.state === 'READY'
-          ? 'READY'
-          : matchedDeployment
-          ? 'DEPLOYING'
-          : 'NO_DEPLOY',
+      status: matchedDeployment?.state === 'READY' ? 'READY' : 'DEPLOYING',
       deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
       gitStatus,
       gitConclusion,
