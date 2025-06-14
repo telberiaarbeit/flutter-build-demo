@@ -23,9 +23,7 @@ export default async function handler(req, res) {
     const githubResp = await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
       {
-        headers: {
-          Authorization: `token ${GITHUB_TOKEN}`,
-        },
+        headers: { Authorization: `token ${GITHUB_TOKEN}` },
       }
     );
     const githubData = await githubResp.json();
@@ -37,40 +35,39 @@ export default async function handler(req, res) {
 
     // 2. Get recent Vercel deployments
     const vercelResp = await fetch(
-      `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=10`,
+      `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=20`,
       {
-        headers: {
-          Authorization: `Bearer ${VERCEL_TOKEN}`,
-        },
+        headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
       }
     );
     const vercelData = await vercelResp.json();
 
-    // 3. Match deployment for this branch (loose match to tolerate missing metadata)
-    const matchedDeployment = vercelData.deployments?.find(
-      (d) =>
-        d.state === 'READY' &&
-        (
-          d.meta?.githubBranch === BRANCH ||
-          d.name?.includes(BRANCH) ||
-          d.target === BRANCH
-        )
-    );
+    // 3. Match by SHA exactly
+    const matchedDeployment = vercelData.deployments
+      ?.filter(
+        (d) =>
+          d.state === 'READY' &&
+          d.meta?.githubCommitSha?.toLowerCase() === gitSha?.toLowerCase()
+      )
+      .sort((a, b) => b.createdAt - a.createdAt)?.[0];
 
     return res.status(200).json({
       status:
-        gitStatus === 'completed' && gitConclusion === 'success' && matchedDeployment
+        gitStatus === 'completed' &&
+        gitConclusion === 'success' &&
+        matchedDeployment
           ? 'READY'
           : 'DEPLOYING',
       deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
       gitStatus,
       gitConclusion,
       gitSha,
-      vercelData
+      matchedCommit: matchedDeployment?.meta?.githubCommitSha || null,
+      matchedBranch: matchedDeployment?.meta?.githubCommitRef || null
     });
 
   } catch (error) {
-    console.error('Error checking deploy status:', error);
+    console.error('Deployment check error:', error);
     return res.status(500).json({ error: 'Failed to check deployment status' });
   }
 }
