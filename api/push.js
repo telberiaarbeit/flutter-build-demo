@@ -13,8 +13,10 @@ export default async function handler(req, res) {
 
   const { code, secret_code } = req.body || {};
   if (!code || !secret_code) {
-    return res.status(400).json({ error: 'Missing Flutter code or branch name' });
+    return res.status(400).json({ error: 'Missing Flutter code or secret_code' });
   }
+
+  const branch = secret_code;
 
   const headers = {
     Authorization: `token ${GITHUB_TOKEN}`,
@@ -22,7 +24,7 @@ export default async function handler(req, res) {
   };
 
   const fileUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
-  const branchUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/${secret_code}`;
+  const branchUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/${branch}`;
 
   // Step 1: Check if branch exists
   let branchExists = true;
@@ -33,19 +35,19 @@ export default async function handler(req, res) {
     branchExists = false;
   }
 
-  // Step 2: If branch doesn't exist, clone from main
+  // Step 2: If branch doesn't exist, clone from web-build
   if (!branchExists) {
     try {
-      // Get main ref
-      const mainRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/main`, { headers });
-      const mainRef = await mainRefResp.json();
+      const baseBranch = 'web-build';
+      const baseRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/${baseBranch}`, { headers });
+      const baseRef = await baseRefResp.json();
 
       const createBranchResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/refs`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
           ref: `refs/heads/${branch}`,
-          sha: mainRef.object.sha
+          sha: baseRef.object.sha
         })
       });
 
@@ -54,7 +56,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Branch creation failed', details: err });
       }
     } catch (err) {
-      return res.status(500).json({ error: 'Error cloning branch from main', message: err.message });
+      return res.status(500).json({ error: 'Error cloning branch from web-build', message: err.message });
     }
   }
 
