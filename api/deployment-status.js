@@ -19,7 +19,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Get latest GitHub Actions run for the branch
+    const maxRetries = 12; // Wait max 60s
+    const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    // Fetch GitHub info once
     const githubResp = await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
       {
@@ -28,36 +31,48 @@ export default async function handler(req, res) {
     );
     const githubData = await githubResp.json();
     const latestRun = githubData.workflow_runs?.[0];
-
     const gitStatus = latestRun?.status;
     const gitConclusion = latestRun?.conclusion;
     const gitSha = latestRun?.head_sha;
 
-    // 2. Get recent Vercel deployments
-    const vercelResp = await fetch(
-      `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=20`,
-      {
-        headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
-      }
-    );
-    const vercelData = await vercelResp.json();
+    // No GitHub run? Return
+    if (!gitSha) {
+      return res.status(200).json({ status: 'NO_DEPLOY', message: 'No GitHub run found for this branch.' });
+    }
 
-    // 3. Match by SHA exactly
-    const matchedDeployment = vercelData.deployments
-      ?.filter(
-        (d) =>
-          d.state === 'READY' &&
-          d.meta?.githubCommitSha?.toLowerCase() === gitSha?.toLowerCase()
-      )
-      .sort((a, b) => b.createdAt - a.createdAt)?.[0];
+    let matchedDeployment = null;
+    for (let i = 0; i < maxRetries; i++) {
+      const vercelResp = await fetch(
+        `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=20`,
+        {
+          headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
+        }
+      );
+      const vercelData = await vercelResp.json();
+
+      matchedDeployment = vercelData.deployments
+        ?.filter(
+          (d) =>
+            d.meta?.githubCommitSha?.toLowerCase() === gitSha.toLowerCase()
+        )
+        .sort((a, b) => b.createdAt - a.createdAt)?.[0];
+
+      if (matchedDeployment?.state === 'READY') break;
+      if (!matchedDeployment || matchedDeployment.state === 'ERROR') break;
+
+      await delay(5000); // wait 5 seconds before retrying
+      console.log(`Retrying... (${i + 1}/${maxRetries})`);
+    }
 
     return res.status(200).json({
       status:
         gitStatus === 'completed' &&
         gitConclusion === 'success' &&
-        matchedDeployment
+        matchedDeployment?.state === 'READY'
           ? 'READY'
-          : 'DEPLOYING',
+          : matchedDeployment
+          ? 'DEPLOYING'
+          : 'NO_DEPLOY',
       deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
       gitStatus,
       gitConclusion,
