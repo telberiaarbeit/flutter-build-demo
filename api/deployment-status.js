@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const maxRetries = 12; // 60 seconds total (5s interval)
+    const maxRetries = 24; // 60 seconds total (5s interval)
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
     let gitStatus = null;
