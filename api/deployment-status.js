@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Get latest GitHub Actions run for branch
+    // 1. Get latest GitHub Actions run for the branch
     const githubResp = await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
       {
@@ -35,9 +35,9 @@ export default async function handler(req, res) {
     const gitConclusion = latestRun?.conclusion;
     const gitSha = latestRun?.head_sha;
 
-    // 2. Get latest Vercel deployment
+    // 2. Get recent Vercel deployments
     const vercelResp = await fetch(
-      `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=5`,
+      `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=10`,
       {
         headers: {
           Authorization: `Bearer ${VERCEL_TOKEN}`,
@@ -46,25 +46,23 @@ export default async function handler(req, res) {
     );
     const vercelData = await vercelResp.json();
 
-    // Match based on branch name or SHA
+    // 3. Match deployment for this branch (loose match to tolerate missing metadata)
     const matchedDeployment = vercelData.deployments?.find(
       (d) =>
-        d.meta?.githubBranch === BRANCH &&
-        d.meta?.githubCommitSha === gitSha &&
-        d.state === 'READY'
+        d.state === 'READY' &&
+        (
+          d.meta?.githubBranch === BRANCH ||
+          d.name?.includes(BRANCH) ||
+          d.target === BRANCH
+        )
     );
-
-    const deploymentUrl = matchedDeployment ? `https://${matchedDeployment.url}` : null;
 
     return res.status(200).json({
       status:
-        gitStatus === 'completed' && gitConclusion === 'success'
+        gitStatus === 'completed' && gitConclusion === 'success' && matchedDeployment
           ? 'READY'
-          : gitStatus || 'unknown',
-      deploymentUrl:
-        gitStatus === 'completed' && gitConclusion === 'success'
-          ? deploymentUrl
-          : null,
+          : 'DEPLOYING',
+      deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
     });
 
   } catch (error) {
