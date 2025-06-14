@@ -59,10 +59,14 @@ export default async function handler(req, res) {
     return res.status(200).json({
       status:
         gitStatus === 'completed' && gitConclusion === 'success'
-          ? matchedDeployment?.state || 'DEPLOYING'
+          ? 'READY'
           : gitStatus || 'unknown',
-      deploymentUrl: matchedDeployment?.state === 'READY' ? deploymentUrl : null,
+      deploymentUrl:
+        gitStatus === 'completed' && gitConclusion === 'success'
+          ? deploymentUrl
+          : null,
     });
+
   } catch (error) {
     console.error('Error checking deploy status:', error);
     return res.status(500).json({ error: 'Failed to check deployment status' });
