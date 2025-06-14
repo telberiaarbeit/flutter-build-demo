@@ -21,6 +21,7 @@ export default async function handler(req, res) {
   try {
     const maxRetries = 24; // 60 seconds total (5s interval)
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+    await delay(5000);
 
     let gitStatus = null;
     let gitConclusion = null;
