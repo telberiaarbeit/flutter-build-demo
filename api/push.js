@@ -2,70 +2,99 @@ const fetch = global.fetch || ((...args) =>
   import('node-fetch').then(({ default: fetch }) => fetch(...args)));
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
-const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID;
-
 const REPO_OWNER = 'telberiaarbeit';
 const REPO_NAME = 'flutter-build-demo';
-
-const POLL_INTERVAL_MS = 3000;
-const MAX_ATTEMPTS = 40;
+const FILE_PATH = 'lib/main.dart';
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Only GET allowed' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Only POST allowed' });
   }
 
-  const branch = req.query.secret_code || 'web-build'; // dynamic
+  const { code, secret_code } = req.body || {};
+  if (!code || !secret_code) {
+    return res.status(400).json({ error: 'Missing Flutter code or secret_code' });
+  }
 
+  const branch = secret_code;
+
+  const headers = {
+    Authorization: `token ${GITHUB_TOKEN}`,
+    Accept: 'application/vnd.github+json'
+  };
+
+  const fileUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+  const branchUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/${branch}`;
+
+  // Step 1: Check if branch exists
+  let branchExists = true;
   try {
-    const ghResp = await fetch(
-      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${branch}&per_page=1`,
-      { headers: { Authorization: `token ${GITHUB_TOKEN}` } }
-    );
-    const ghData = await ghResp.json();
-    const latestRun = ghData.workflow_runs?.[0];
+    const resp = await fetch(branchUrl, { headers });
+    if (!resp.ok) branchExists = false;
+  } catch {
+    branchExists = false;
+  }
 
-    if (!latestRun) {
-      return res.status(404).json({ error: `No GitHub Actions run found for branch "${branch}"` });
-    }
+  // Step 2: If branch doesn't exist, clone from main
+  if (!branchExists) {
+    try {
+      const mainRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/main`, { headers });
+      const mainRef = await mainRefResp.json();
 
-    const runId = latestRun.id;
-    const gitSha = latestRun.head_sha;
+      const createBranchResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/refs`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          ref: `refs/heads/${branch}`,
+          sha: mainRef.object.sha
+        })
+      });
 
-    // Optionally wait if build is running (1 short check)
-    let statusCheck = latestRun.status;
-    if (['in_progress', 'queued'].includes(statusCheck)) {
-      const checkResp = await fetch(
-        `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs/${runId}`,
-        { headers: { Authorization: `token ${GITHUB_TOKEN}` } }
-      );
-      const checkData = await checkResp.json();
-      statusCheck = checkData.status;
-    }
-
-    // Step 2: Check Vercel deployments
-    const vercelResp = await fetch(
-      `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=5`,
-      {
-        headers: {
-          Authorization: `Bearer ${VERCEL_TOKEN}`,
-        },
+      if (!createBranchResp.ok) {
+        const err = await createBranchResp.json();
+        return res.status(500).json({ error: 'Branch creation failed', details: err });
       }
-    );
-    const vercelData = await vercelResp.json();
+    } catch (err) {
+      return res.status(500).json({ error: 'Error cloning branch from main', message: err.message });
+    }
+  }
 
-    const matched = vercelData.deployments?.find(
-      (d) => d.meta?.githubCommitSha === gitSha
-    );
+  // Step 3: Get current SHA of file (if it exists)
+  let sha = null;
+  try {
+    const resp = await fetch(`${fileUrl}?ref=${branch}`, { headers });
+    if (resp.ok) {
+      const data = await resp.json();
+      sha = data.sha;
+    }
+  } catch (err) {
+    console.error('Error fetching file SHA:', err.message);
+  }
 
-    return res.status(200).json({
-      status: matched?.state === 'READY' ? 'READY' : 'DEPLOYING',
-      deploymentUrl: matched?.state === 'READY' ? `https://${matched.url}` : null,
+  // Step 4: Prepare PUT body
+  const body = {
+    message: `Update ${FILE_PATH} via API`,
+    content: Buffer.from(code).toString('base64'),
+    branch,
+    ...(sha ? { sha } : {})
+  };
+
+  // Step 5: Push update to GitHub
+  try {
+    const update = await fetch(fileUrl, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body)
     });
 
+    const json = await update.json();
+
+    if (update.status === 200 || update.status === 201) {
+      return res.status(200).json({ status: 'success', github_url: json.content?.html_url });
+    } else {
+      return res.status(500).json({ error: 'GitHub push failed', details: json });
+    }
   } catch (err) {
-    console.error('Deployment check error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'GitHub request error', message: err.message });
   }
 }
