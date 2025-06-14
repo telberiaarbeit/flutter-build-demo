@@ -3,7 +3,7 @@ name: Flutter Web Build & Commit
 on:
   push:
     branches:
-      - '**'
+      - '**'  # Trigger on any branch
 
 jobs:
   build-and-commit:
@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # required for pushing to same branch
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -30,15 +32,10 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-
-          # Setup remote with PAT
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
 
-          # Copy web build to root or wherever you want it committed
           cp -r build/web/* .
 
           git add .
-          git commit -m "Update root with latest Flutter web build [skip ci]" || echo "No changes to commit"
-          git push origin HEAD
-          echo "Build output committed to branch ${{ github.ref }}"
-          echo "Build output URL: https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+          git commit -m "Update web build [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:${GITHUB_REF#refs/heads/}
