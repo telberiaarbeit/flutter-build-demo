@@ -24,21 +24,21 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release
 
-      - name: Commit build output to same branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
+      # - name: Commit build output to same branch
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      #   run: |
+      #     git config --global user.name "github-actions"
+      #     git config --global user.email "github-actions@github.com"
 
-          # Setup remote with PAT
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
+      #     # Setup remote with PAT
+      #     git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
 
-          # Copy web build to root or wherever you want it committed
-          cp -r build/web/* .
+      #     # Copy web build to root or wherever you want it committed
+      #     cp -r build/web/* .
 
-          git add .
-          git commit -m "Update root with latest Flutter web build [skip ci]" || echo "No changes to commit"
-          git push origin HEAD
-          echo "Build output committed to branch ${{ github.ref }}"
-          echo "Build output URL: https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+      #     git add .
+      #     git commit -m "Update root with latest Flutter web build [skip ci]" || echo "No changes to commit"
+      #     git push origin HEAD
+      #     echo "Build output committed to branch ${{ github.ref }}"
+      #     echo "Build output URL: https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
