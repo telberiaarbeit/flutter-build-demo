@@ -21,37 +21,50 @@ export default async function handler(req, res) {
     let attempt = 0;
     let latestRun, gitStatus, gitConclusion, gitSha;
 
-    // Step 1: Wait for GitHub Actions to complete
+    // Step 1: Get latest GitHub Actions workflow run on the branch
+    const githubResp = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
+      {
+        headers: { Authorization: `token ${GITHUB_TOKEN}` },
+      }
+    );
+    const githubData = await githubResp.json();
+    latestRun = githubData.workflow_runs?.[0];
+
+    if (!latestRun) {
+      return res.status(404).json({ error: 'No recent GitHub Action run found' });
+    }
+
+    gitSha = latestRun.head_sha;
+
+    // Step 2: Wait for GitHub Action to complete
     while (attempt < MAX_ATTEMPTS) {
-      const githubResp = await fetch(
-        `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
+      const checkResp = await fetch(
+        `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs/${latestRun.id}`,
         {
           headers: { Authorization: `token ${GITHUB_TOKEN}` },
         }
       );
-      const githubData = await githubResp.json();
-      latestRun = githubData.workflow_runs?.[0];
+      const checkData = await checkResp.json();
 
-      gitStatus = latestRun?.status;
-      gitConclusion = latestRun?.conclusion;
-      gitSha = latestRun?.head_sha;
+      gitStatus = checkData.status;
+      gitConclusion = checkData.conclusion;
 
-      if (gitStatus === 'completed' && gitConclusion === 'success') break;
+      if (gitStatus === 'completed') {
+        if (gitConclusion === 'success') break;
+        else {
+          return res.status(500).json({ error: 'GitHub Actions failed', conclusion: gitConclusion });
+        }
+      }
 
-      await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
       attempt++;
     }
 
-    if (!gitSha || gitConclusion !== 'success') {
-      return res.status(200).json({
-        status: gitStatus || 'unknown',
-        deploymentUrl: null,
-      });
-    }
-
-    // Step 2: Wait for a Vercel deployment matching that SHA and state === READY
+    // Step 3: Wait for Vercel deployment with matching SHA to be READY
     attempt = 0;
     let deploymentUrl = null;
+
     while (attempt < MAX_ATTEMPTS) {
       const vercelResp = await fetch(
         `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=5`,
@@ -62,9 +75,7 @@ export default async function handler(req, res) {
       const vercelData = await vercelResp.json();
 
       const matched = vercelData.deployments?.find(
-        (d) =>
-          d.meta?.githubCommitSha === gitSha &&
-          d.state === 'READY'
+        (d) => d.meta?.githubCommitSha === gitSha && d.state === 'READY'
       );
 
       if (matched) {
@@ -72,7 +83,7 @@ export default async function handler(req, res) {
         break;
       }
 
-      await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
       attempt++;
     }
 
@@ -80,9 +91,8 @@ export default async function handler(req, res) {
       status: deploymentUrl ? 'READY' : 'DEPLOYING',
       deploymentUrl: deploymentUrl || null,
     });
-
   } catch (err) {
-    console.error('Error during deploy check:', err);
-    return res.status(500).json({ error: 'Failed to check deployment status' });
+    console.error('Deployment check error:', err);
+    return res.status(500).json({ error: 'Internal error during deploy check' });
   }
 }
