@@ -63,6 +63,17 @@ export default async function handler(req, res) {
           ? 'READY'
           : 'DEPLOYING',
       deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
+      gitStatus,
+      gitConclusion,
+      gitSha,
+      vercelState: matchedDeployment?.state,
+      vercelSha: matchedDeployment?.meta?.githubCommitSha,
+      vercelBranch: matchedDeployment?.meta?.githubBranch || matchedDeployment?.name,
+      vercelTarget: matchedDeployment?.target,
+      vercelName: matchedDeployment?.name,
+      vercelCreatedAt: matchedDeployment?.createdAt,
+      vercelUpdatedAt: matchedDeployment?.updatedAt,
+      vercelUrl: matchedDeployment?.url,
     });
 
   } catch (error) {
