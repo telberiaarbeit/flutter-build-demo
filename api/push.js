@@ -35,19 +35,18 @@ export default async function handler(req, res) {
     branchExists = false;
   }
 
-  // Step 2: If branch doesn't exist, clone from web-build
+  // Step 2: If branch doesn't exist, clone from main
   if (!branchExists) {
     try {
-      const baseBranch = 'web-build';
-      const baseRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/${baseBranch}`, { headers });
-      const baseRef = await baseRefResp.json();
+      const mainRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/main`, { headers });
+      const mainRef = await mainRefResp.json();
 
       const createBranchResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/refs`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
           ref: `refs/heads/${branch}`,
-          sha: baseRef.object.sha
+          sha: mainRef.object.sha
         })
       });
 
@@ -56,7 +55,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Branch creation failed', details: err });
       }
     } catch (err) {
-      return res.status(500).json({ error: 'Error cloning branch from web-build', message: err.message });
+      return res.status(500).json({ error: 'Error cloning branch from main', message: err.message });
     }
   }
 

@@ -7,82 +7,67 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 const REPO_OWNER = 'telberiaarbeit';
 const REPO_NAME = 'flutter-build-demo';
-const BRANCH = 'web-build';
-
-const POLL_INTERVAL_MS = 3000;
-const MAX_ATTEMPTS = 40;
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Only GET allowed' });
   }
 
+  const BRANCH = req.query.secret_code;
+  if (!BRANCH) {
+    return res.status(400).json({ error: 'Missing secret_code (branch name)' });
+  }
+
   try {
-    let attempt = 0;
-    let latestRun, gitStatus, gitConclusion, gitSha;
-
-    // Step 1: Wait for GitHub Actions to complete
-    while (attempt < MAX_ATTEMPTS) {
-      const githubResp = await fetch(
-        `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
-        {
-          headers: { Authorization: `token ${GITHUB_TOKEN}` },
-        }
-      );
-      const githubData = await githubResp.json();
-      latestRun = githubData.workflow_runs?.[0];
-
-      gitStatus = latestRun?.status;
-      gitConclusion = latestRun?.conclusion;
-      gitSha = latestRun?.head_sha;
-
-      if (gitStatus === 'completed' && gitConclusion === 'success') break;
-
-      await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
-      attempt++;
-    }
-
-    if (!gitSha || gitConclusion !== 'success') {
-      return res.status(200).json({
-        status: gitStatus || 'unknown',
-        deploymentUrl: null,
-      });
-    }
-
-    // Step 2: Wait for a Vercel deployment matching that SHA and state === READY
-    attempt = 0;
-    let deploymentUrl = null;
-    while (attempt < MAX_ATTEMPTS) {
-      const vercelResp = await fetch(
-        `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=5`,
-        {
-          headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
-        }
-      );
-      const vercelData = await vercelResp.json();
-
-      const matched = vercelData.deployments?.find(
-        (d) =>
-          d.meta?.githubCommitSha === gitSha &&
-          d.state === 'READY'
-      );
-
-      if (matched) {
-        deploymentUrl = matched.url;
-        break;
+    // 1. Get latest GitHub Actions run for the branch
+    const githubResp = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
+      {
+        headers: { Authorization: `token ${GITHUB_TOKEN}` },
       }
+    );
+    const githubData = await githubResp.json();
+    const latestRun = githubData.workflow_runs?.[0];
 
-      await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
-      attempt++;
-    }
+    const gitStatus = latestRun?.status;
+    const gitConclusion = latestRun?.conclusion;
+    const gitSha = latestRun?.head_sha;
+
+    // 2. Get recent Vercel deployments
+    const vercelResp = await fetch(
+      `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=20`,
+      {
+        headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
+      }
+    );
+    const vercelData = await vercelResp.json();
+
+    // 3. Match by SHA exactly
+    const matchedDeployment = vercelData.deployments
+      ?.filter(
+        (d) =>
+          d.state === 'READY' &&
+          d.meta?.githubCommitSha?.toLowerCase() === gitSha?.toLowerCase()
+      )
+      .sort((a, b) => b.createdAt - a.createdAt)?.[0];
 
     return res.status(200).json({
-      status: deploymentUrl ? 'READY' : 'DEPLOYING',
-      deploymentUrl: deploymentUrl || null,
+      status:
+        gitStatus === 'completed' &&
+        gitConclusion === 'success' &&
+        matchedDeployment
+          ? 'READY'
+          : 'DEPLOYING',
+      deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
+      gitStatus,
+      gitConclusion,
+      gitSha,
+      matchedCommit: matchedDeployment?.meta?.githubCommitSha || null,
+      matchedBranch: matchedDeployment?.meta?.githubCommitRef || null
     });
 
-  } catch (err) {
-    console.error('Error during deploy check:', err);
+  } catch (error) {
+    console.error('Deployment check error:', error);
     return res.status(500).json({ error: 'Failed to check deployment status' });
   }
 }
