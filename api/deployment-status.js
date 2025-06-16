@@ -19,15 +19,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const maxRetries = 24; // 60 seconds total (5s interval)
+    const maxRetries = 12; // Total 60s (24 * 2.5s)
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
-    await delay(5000);
+    await delay(2500); // small initial delay
 
     let gitStatus = null;
     let gitConclusion = null;
     let gitSha = null;
 
-    // Wait for GitHub Actions to complete
+    // Poll GitHub Actions for latest run status
     for (let i = 0; i < maxRetries; i++) {
       const githubResp = await fetch(
         `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       gitSha = latestRun?.head_sha;
 
       if (gitStatus === 'completed') break;
-      await delay(5000);
+      await delay(2500);
     }
 
     if (gitStatus !== 'completed' || gitConclusion !== 'success' || !gitSha) {
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Now poll Vercel for deployment
+    // Poll Vercel for the latest deployment from the same branch
     let matchedDeployment = null;
     for (let i = 0; i < maxRetries; i++) {
       const vercelResp = await fetch(
@@ -69,14 +69,14 @@ export default async function handler(req, res) {
       matchedDeployment = vercelData.deployments
         ?.filter(
           (d) =>
-            d.meta?.githubCommitSha?.toLowerCase() === gitSha.toLowerCase()
+            d.meta?.githubCommitRef?.toLowerCase() === BRANCH.toLowerCase()
         )
         .sort((a, b) => b.createdAt - a.createdAt)?.[0];
 
       if (matchedDeployment?.state === 'READY') break;
       if (!matchedDeployment || matchedDeployment.state === 'ERROR') break;
 
-      await delay(5000);
+      await delay(2500);
     }
 
     return res.status(200).json({
