@@ -10,13 +10,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PERSONAL_ACCESS_TOKEN',
+      title: 'APP TESTING',
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('PERSONAL_ACCESS_TOKEN'),
+          title: const Text('APP TESTING'),
         ),
         body: const Center(
-          child: Text('Welcome to your new Flutter Web App!'),
+          child: Text('Welcome to APP TESTING!'),
         ),
       ),
     );
