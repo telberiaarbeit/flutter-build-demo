@@ -10,13 +10,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Hello 2',
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Hello 2'),
-        ),
-        body: const Center(
-          child: Text('Hello, Flutter Web!'),
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Text(
+            'Hello Lucky Luke',
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
