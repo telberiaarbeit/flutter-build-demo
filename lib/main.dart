@@ -1,38 +1,32 @@
-import 'dart:html' as html;
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const DonkeyFaceApp());
+  runApp(const ToDoApp());
 }
 
-class DonkeyFaceApp extends StatefulWidget {
-  const DonkeyFaceApp({super.key});
+class ToDoApp extends StatefulWidget {
+  const ToDoApp({super.key});
 
   @override
-  State<DonkeyFaceApp> createState() => _DonkeyFaceAppState();
+  State<ToDoApp> createState() => _ToDoAppState();
 }
 
-class _DonkeyFaceAppState extends State<DonkeyFaceApp> {
-  Uint8List? _uploadedImage;
+class _ToDoAppState extends State<ToDoApp> {
+  final List<Map<String, dynamic>> _tasks = [];
+  final TextEditingController _controller = TextEditingController();
 
-  void _pickImage() {
-    html.InputElement uploadInput = html.FileUploadInputElement();
-    uploadInput.accept = 'image/*';
-    uploadInput.click();
+  void _addTask(String task) {
+    if (task.isNotEmpty) {
+      setState(() {
+        _tasks.add({'title': task, 'done': false});
+        _controller.clear();
+      });
+    }
+  }
 
-    uploadInput.onChange.listen((event) {
-      final file = uploadInput.files?.first;
-      if (file != null) {
-        final reader = html.FileReader();
-        reader.readAsArrayBuffer(file);
-        reader.onLoadEnd.listen((e) {
-          setState(() {
-            _uploadedImage = reader.result as Uint8List;
-          });
-        });
-      }
+  void _toggleDone(int index) {
+    setState(() {
+      _tasks[index]['done'] = !_tasks[index]['done'];
     });
   }
 
@@ -40,40 +34,49 @@ class _DonkeyFaceAppState extends State<DonkeyFaceApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Eselkopf Ersetzer')),
-        body: Center(
+        appBar: AppBar(title: const Text('Meine ToDo App')),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(labelText: 'Neue Aufgabe'),
+                      onSubmitted: _addTask,
+                    ),
                   ),
-                  child: const Text(
-                    'Bild hochladen',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => _addTask(_controller.text),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 20),
-              if (_uploadedImage != null)
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Image.memory(_uploadedImage!, width: 300),
-                    Positioned(
-                      top: 60,
-                      child: Image.network(
-                        'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Donkey_cartoon.svg/240px-Donkey_cartoon.svg.png',
-                        width: 100,
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _tasks.length,
+                  itemBuilder: (context, index) {
+                    final task = _tasks[index];
+                    return ListTile(
+                      title: Text(
+                        task['title'],
+                        style: TextStyle(
+                          decoration: task['done']
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
                       ),
-                    ),
-                  ],
-                )
+                      trailing: Checkbox(
+                        value: task['done'],
+                        onChanged: (value) => _toggleDone(index),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         ),
