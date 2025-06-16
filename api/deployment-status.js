@@ -25,9 +25,8 @@ export default async function handler(req, res) {
 
     let gitStatus = null;
     let gitConclusion = null;
-    let gitSha = null;
 
-    // Poll GitHub Actions for latest run status
+    // Step 1: Wait for GitHub Actions to complete
     for (let i = 0; i < maxRetries; i++) {
       const githubResp = await fetch(
         `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
@@ -39,23 +38,21 @@ export default async function handler(req, res) {
       const latestRun = githubData.workflow_runs?.[0];
       gitStatus = latestRun?.status;
       gitConclusion = latestRun?.conclusion;
-      gitSha = latestRun?.head_sha;
 
       if (gitStatus === 'completed') break;
       await delay(2500);
     }
 
-    if (gitStatus !== 'completed' || gitConclusion !== 'success' || !gitSha) {
+    if (gitStatus !== 'completed' || gitConclusion !== 'success') {
       return res.status(200).json({
         status: 'DEPLOYING',
         message: 'GitHub Actions not completed or failed.',
         gitStatus,
         gitConclusion,
-        gitSha,
       });
     }
 
-    // Poll Vercel for the correct build-triggered deployment
+    // Step 2: Get latest valid Vercel deployment (ignore SHA)
     let matchedDeployment = null;
     for (let i = 0; i < maxRetries; i++) {
       const vercelResp = await fetch(
@@ -84,9 +81,6 @@ export default async function handler(req, res) {
     return res.status(200).json({
       status: matchedDeployment?.state === 'READY' ? 'READY' : 'DEPLOYING',
       deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
-      gitStatus,
-      gitConclusion,
-      gitSha,
       matchedCommit: matchedDeployment?.meta?.githubCommitSha || null,
       matchedBranch: matchedDeployment?.meta?.githubCommitRef || null,
       commitMessage: matchedDeployment?.meta?.githubMessage || null
