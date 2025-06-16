@@ -3,9 +3,7 @@ name: Flutter Web Build & Deploy
 on:
   push:
     branches:
-      - main
-
-
+      - '**'  # Run on all branches
 
 jobs:
   build-and-deploy:
@@ -29,25 +27,26 @@ jobs:
       - name: Prepare deployment branch
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          BRANCH: ${{ github.ref_name }}
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
 
-          git clone --depth 1 --branch web-build https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} web-build || \
+          git clone --depth 1 --branch $BRANCH https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} web-build || \
           git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} web-build
 
-          # Remove only old Flutter web static files (not /api)
-          rm -rf web-build/assets web-build/canvaskit web-build/flutter.js web-build/flutter_bootstrap.js web-build/flutter_service_worker.js web-build/index.html
-
-          # Copy Flutter web build files
-          cp -r build/web/* web-build/
-          cp -r build/web/* .
-          # Copy the /api folder with serverless API routes
-          cp -r api web-build/
-
           cd web-build
+          git checkout -B $BRANCH
+
+          # Remove only old Flutter web static files
+          rm -rf assets canvaskit flutter.js flutter_bootstrap.js flutter_service_worker.js index.html
+
+          # Copy build output
+          cp -r ../build/web/* .
+
+          # Optional: copy API if exists
+          [ -d ../api ] && cp -r ../api .
+
           git add --all
-          git commit -m "Deploy Flutter web build + API from GitHub Actions [skip ci]" || echo "No changes to commit"
-          git push origin web-build --force
+          git commit -m "Deploy Flutter web build from branch $BRANCH [skip ci]" || echo "No changes to commit"
+          git push origin $BRANCH --force
