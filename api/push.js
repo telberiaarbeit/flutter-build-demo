@@ -38,7 +38,7 @@ export default async function handler(req, res) {
   // Step 2: If branch doesn't exist, clone from main
   if (!branchExists) {
     try {
-      const mainRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/main`, { headers });
+      const mainRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/web-build`, { headers });
       const mainRef = await mainRefResp.json();
 
       const createBranchResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/refs`, {
