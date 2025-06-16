@@ -11,9 +11,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Hoang3')),
+        appBar: AppBar(
+          title: const Text('Hello World App'),
+        ),
         body: const Center(
-          child: Text('Welcome to the Hoang3 app!'),
+          child: Text(
+            'Hallo Welt!',
+            style: TextStyle(fontSize: 24),
+          ),
         ),
       ),
     );
