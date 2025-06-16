@@ -1,5 +1,5 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 
 void main() {
   runApp(const ToDoApp());
@@ -14,11 +14,27 @@ class ToDoApp extends StatefulWidget {
 
 enum Filter { all, done, notDone }
 
-class _ToDoAppState extends State<ToDoApp> {
+class _ToDoAppState extends State<ToDoApp> with SingleTickerProviderStateMixin {
   final List<Map<String, dynamic>> _tasks = [];
   final TextEditingController _controller = TextEditingController();
   Filter _currentFilter = Filter.all;
-  bool _showFireworks = false;
+  bool _showConfetti = false;
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   void _addTask(String task) {
     if (task.isNotEmpty) {
@@ -33,10 +49,11 @@ class _ToDoAppState extends State<ToDoApp> {
     setState(() {
       _tasks[index]['done'] = !_tasks[index]['done'];
       if (_tasks[index]['done']) {
-        _showFireworks = true;
+        _showConfetti = true;
+        _animationController.forward(from: 0);
         Future.delayed(const Duration(seconds: 2), () {
           setState(() {
-            _showFireworks = false;
+            _showConfetti = false;
           });
         });
       }
@@ -129,15 +146,35 @@ class _ToDoAppState extends State<ToDoApp> {
               ),
             ),
           ),
-          if (_showFireworks)
-            Center(
-              child: Lottie.network(
-                'https://assets1.lottiefiles.com/packages/lf20_cukzrbrg.json',
-                width: 200,
+          if (_showConfetti)
+            IgnorePointer(
+              child: CustomPaint(
+                painter: ConfettiPainter(_animationController),
+                child: const SizedBox.expand(),
               ),
             ),
         ],
       ),
     );
   }
+}
+
+class ConfettiPainter extends CustomPainter {
+  final Animation<double> animation;
+  final Random _random = Random();
+  ConfettiPainter(this.animation) : super(repaint: animation);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint();
+    for (int i = 0; i < 50; i++) {
+      paint.color = Colors.primaries[i % Colors.primaries.length].withOpacity(1.0 - animation.value);
+      final dx = _random.nextDouble() * size.width;
+      final dy = _random.nextDouble() * size.height * (1 - animation.value);
+      canvas.drawCircle(Offset(dx, dy), 5, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
