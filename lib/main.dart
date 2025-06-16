@@ -11,9 +11,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Hoang3')),
-        body: const Center(
-          child: Text('Welcome to the Hoang3 app!'),
+        body: Center(
+          child: Text('Hello, World!'),
         ),
       ),
     );
