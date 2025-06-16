@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const maxRetries = 12; // Total 60s (24 * 2.5s)
+    const maxRetries = 12; // 60s total
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
     await delay(2500); // small initial delay
 
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     let gitConclusion = null;
     let gitSha = null;
 
-    // Poll GitHub Actions for latest run status
+    // Step 1: Wait for GitHub Actions to complete
     for (let i = 0; i < maxRetries; i++) {
       const githubResp = await fetch(
         `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Poll Vercel for the latest deployment from the same branch
+    // Step 2: Find the latest Vercel deployment with correct branch and commit message
     let matchedDeployment = null;
     for (let i = 0; i < maxRetries; i++) {
       const vercelResp = await fetch(
@@ -69,7 +69,9 @@ export default async function handler(req, res) {
       matchedDeployment = vercelData.deployments
         ?.filter(
           (d) =>
-            d.meta?.githubCommitRef?.toLowerCase() === BRANCH.toLowerCase()
+            d.meta?.githubCommitRef?.toLowerCase() === BRANCH.toLowerCase() &&
+            typeof d.meta?.githubMessage === 'string' &&
+            d.meta.githubMessage.startsWith('Deploy Flutter web build from branch')
         )
         .sort((a, b) => b.createdAt - a.createdAt)?.[0];
 
@@ -86,7 +88,8 @@ export default async function handler(req, res) {
       gitConclusion,
       gitSha,
       matchedCommit: matchedDeployment?.meta?.githubCommitSha || null,
-      matchedBranch: matchedDeployment?.meta?.githubCommitRef || null
+      matchedBranch: matchedDeployment?.meta?.githubCommitRef || null,
+      commitMessage: matchedDeployment?.meta?.githubMessage || null,
     });
 
   } catch (error) {
