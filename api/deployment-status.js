@@ -63,7 +63,7 @@ export default async function handler(req, res) {
       );
       const vercelData = await vercelResp.json();
 
-      
+
       matchedDeployment = vercelData.deployments
         ?.filter(
           (d) =>
@@ -90,6 +90,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Deployment check error:', error);
-    return res.status(500).json({ error: 'Failed to check deployment status' });
+    return res.status(500).json({ error: 'Failed to check deployment status', details: error?.message || error });
+
   }
 }
