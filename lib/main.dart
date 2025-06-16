@@ -75,7 +75,7 @@ class _ToDoAppState extends State<ToDoApp> with SingleTickerProviderStateMixin {
       home: Stack(
         children: [
           Scaffold(
-            appBar: AppBar(title: const Text('Meine ToDo App')),
+            appBar: AppBar(title: const Text('Meine ToDo App von Christoph')),
             body: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
