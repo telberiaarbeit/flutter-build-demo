@@ -63,6 +63,7 @@ export default async function handler(req, res) {
       );
       const vercelData = await vercelResp.json();
 
+      
       matchedDeployment = vercelData.deployments
         ?.filter(
           (d) =>
@@ -83,7 +84,8 @@ export default async function handler(req, res) {
       deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
       matchedCommit: matchedDeployment?.meta?.githubCommitSha || null,
       matchedBranch: matchedDeployment?.meta?.githubCommitRef || null,
-      commitMessage: matchedDeployment?.meta?.githubMessage || null
+      commitMessage: matchedDeployment?.meta?.githubMessage || null,
+      vercelData
     });
 
   } catch (error) {
