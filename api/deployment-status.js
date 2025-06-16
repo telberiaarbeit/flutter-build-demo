@@ -8,7 +8,6 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const REPO_OWNER = 'telberiaarbeit';
 const REPO_NAME = 'flutter-build-demo';
 
-
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Only GET allowed' });
