@@ -25,8 +25,9 @@ export default async function handler(req, res) {
 
     let gitStatus = null;
     let gitConclusion = null;
+    let gitSha = null;
 
-    // Step 1: Wait for GitHub Actions to complete
+    // Poll GitHub Actions for the latest run status
     for (let i = 0; i < maxRetries; i++) {
       const githubResp = await fetch(
         `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
@@ -38,25 +39,24 @@ export default async function handler(req, res) {
       const latestRun = githubData.workflow_runs?.[0];
       gitStatus = latestRun?.status;
       gitConclusion = latestRun?.conclusion;
+      gitSha = latestRun?.head_sha;
 
       if (gitStatus === 'completed') break;
       await delay(2500);
     }
 
-    if (gitStatus !== 'completed' || gitConclusion !== 'success') {
+    if (gitStatus !== 'completed' || gitConclusion !== 'success' || !gitSha) {
       return res.status(200).json({
         status: 'DEPLOYING',
         message: 'GitHub Actions not completed or failed.',
         gitStatus,
         gitConclusion,
+        gitSha,
       });
     }
 
-    // Step 2: Get latest valid Vercel deployment (ignore SHA)
+    // Poll Vercel for the latest deployment matching the branch and message
     let matchedDeployment = null;
-
-    let vercelData = null; // <-- declare it here
-
     for (let i = 0; i < maxRetries; i++) {
       const vercelResp = await fetch(
         `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=20`,
@@ -64,14 +64,14 @@ export default async function handler(req, res) {
           headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
         }
       );
-      vercelData = await vercelResp.json(); // <-- assign inside loop
+      const vercelData = await vercelResp.json();
 
       matchedDeployment = vercelData.deployments
         ?.filter(
           (d) =>
             d.meta?.githubCommitRef?.toLowerCase() === BRANCH.toLowerCase() &&
-            typeof d.meta?.githubMessage === 'string' &&
-            d.meta.githubMessage.startsWith('Deploy Flutter web build from branch')
+            typeof d.meta?.githubCommitMessage === 'string' &&
+            d.meta.githubCommitMessage.startsWith('Deploy Flutter web build from branch')
         )
         .sort((a, b) => b.createdAt - a.createdAt)?.[0];
 
@@ -84,10 +84,12 @@ export default async function handler(req, res) {
     return res.status(200).json({
       status: matchedDeployment?.state === 'READY' ? 'READY' : 'DEPLOYING',
       deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
+      gitStatus,
+      gitConclusion,
+      gitSha,
       matchedCommit: matchedDeployment?.meta?.githubCommitSha || null,
       matchedBranch: matchedDeployment?.meta?.githubCommitRef || null,
-      commitMessage: matchedDeployment?.meta?.githubMessage || null,
-      vercelData
+      commitMessage: matchedDeployment?.meta?.githubCommitMessage || null,
     });
 
   } catch (error) {
