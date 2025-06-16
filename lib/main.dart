@@ -10,13 +10,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'APP TESTING',
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('APP TESTING'),
-        ),
-        body: const Center(
-          child: Text('Welcome to APP TESTING!'),
+        body: Center(
+          child: Text('Hello, Flutter Web!'),
         ),
       ),
     );
