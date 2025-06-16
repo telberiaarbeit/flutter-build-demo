@@ -19,15 +19,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const maxRetries = 12; // 60s total
+    const maxRetries = 12;
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
-    await delay(2500); // small initial delay
+    await delay(2500);
 
     let gitStatus = null;
     let gitConclusion = null;
     let gitSha = null;
 
-    // Step 1: Wait for GitHub Actions to complete
+    // Poll GitHub Actions for latest run status
     for (let i = 0; i < maxRetries; i++) {
       const githubResp = await fetch(
         `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs?branch=${BRANCH}&per_page=1`,
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Step 2: Find the latest Vercel deployment with correct branch and commit message
+    // Poll Vercel for the correct build-triggered deployment
     let matchedDeployment = null;
     for (let i = 0; i < maxRetries; i++) {
       const vercelResp = await fetch(
@@ -89,7 +89,7 @@ export default async function handler(req, res) {
       gitSha,
       matchedCommit: matchedDeployment?.meta?.githubCommitSha || null,
       matchedBranch: matchedDeployment?.meta?.githubCommitRef || null,
-      commitMessage: matchedDeployment?.meta?.githubMessage || null,
+      commitMessage: matchedDeployment?.meta?.githubMessage || null
     });
 
   } catch (error) {
