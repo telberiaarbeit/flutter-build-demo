@@ -18,7 +18,7 @@ class _ToDoAppState extends State<ToDoApp> with SingleTickerProviderStateMixin {
   final List<Map<String, dynamic>> _tasks = [];
   final TextEditingController _controller = TextEditingController();
   Filter _currentFilter = Filter.all;
-  bool _showConfetti = false;
+  bool _showHearts = false;
   late AnimationController _animationController;
 
   @override
@@ -26,7 +26,7 @@ class _ToDoAppState extends State<ToDoApp> with SingleTickerProviderStateMixin {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),
+      duration: const Duration(seconds: 2),
     );
   }
 
@@ -49,11 +49,11 @@ class _ToDoAppState extends State<ToDoApp> with SingleTickerProviderStateMixin {
     setState(() {
       _tasks[index]['done'] = !_tasks[index]['done'];
       if (_tasks[index]['done']) {
-        _showConfetti = true;
+        _showHearts = true;
         _animationController.forward(from: 0);
         Future.delayed(const Duration(seconds: 2), () {
           setState(() {
-            _showConfetti = false;
+            _showHearts = false;
           });
         });
       }
@@ -146,10 +146,10 @@ class _ToDoAppState extends State<ToDoApp> with SingleTickerProviderStateMixin {
               ),
             ),
           ),
-          if (_showConfetti)
+          if (_showHearts)
             IgnorePointer(
               child: CustomPaint(
-                painter: ConfettiPainter(_animationController),
+                painter: HeartPainter(_animationController),
                 child: const SizedBox.expand(),
               ),
             ),
@@ -159,19 +159,22 @@ class _ToDoAppState extends State<ToDoApp> with SingleTickerProviderStateMixin {
   }
 }
 
-class ConfettiPainter extends CustomPainter {
+class HeartPainter extends CustomPainter {
   final Animation<double> animation;
   final Random _random = Random();
-  ConfettiPainter(this.animation) : super(repaint: animation);
+  HeartPainter(this.animation) : super(repaint: animation);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    for (int i = 0; i < 50; i++) {
-      paint.color = Colors.primaries[i % Colors.primaries.length].withOpacity(1.0 - animation.value);
+    final paint = Paint()..color = Colors.pink.withOpacity(1.0 - animation.value);
+    for (int i = 0; i < 30; i++) {
       final dx = _random.nextDouble() * size.width;
-      final dy = _random.nextDouble() * size.height * (1 - animation.value);
-      canvas.drawCircle(Offset(dx, dy), 5, paint);
+      final dy = size.height - (_random.nextDouble() * size.height * animation.value);
+      final path = Path();
+      path.moveTo(dx, dy);
+      path.cubicTo(dx - 10, dy - 10, dx - 25, dy + 10, dx, dy + 30);
+      path.cubicTo(dx + 25, dy + 10, dx + 10, dy - 10, dx, dy);
+      canvas.drawPath(path, paint);
     }
   }
 
