@@ -54,6 +54,9 @@ export default async function handler(req, res) {
 
     // Step 2: Get latest valid Vercel deployment (ignore SHA)
     let matchedDeployment = null;
+
+    let vercelData = null; // <-- declare it here
+
     for (let i = 0; i < maxRetries; i++) {
       const vercelResp = await fetch(
         `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=20`,
@@ -61,8 +64,7 @@ export default async function handler(req, res) {
           headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
         }
       );
-      const vercelData = await vercelResp.json();
-
+      vercelData = await vercelResp.json(); // <-- assign inside loop
 
       matchedDeployment = vercelData.deployments
         ?.filter(
@@ -84,13 +86,11 @@ export default async function handler(req, res) {
       deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
       matchedCommit: matchedDeployment?.meta?.githubCommitSha || null,
       matchedBranch: matchedDeployment?.meta?.githubCommitRef || null,
-      commitMessage: matchedDeployment?.meta?.githubMessage || null,
-      vercelData
+      commitMessage: matchedDeployment?.meta?.githubMessage || null
     });
 
   } catch (error) {
     console.error('Deployment check error:', error);
-    return res.status(500).json({ error: 'Failed to check deployment status', details: error?.message || error });
-
+    return res.status(500).json({ error: 'Failed to check deployment status' });
   }
 }
