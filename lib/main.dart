@@ -1,3 +1,4 @@
+import 'dart:html' as html;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -119,6 +120,7 @@ class _TodoAppState extends State<TodoApp> {
   final List<TodoItem> _todos = [];
   final TextEditingController _todoController = TextEditingController();
   FilterOption _filter = FilterOption.all;
+  String? _imageUrl;
 
   void _addTodo() {
     if (_todoController.text.isNotEmpty) {
@@ -132,6 +134,26 @@ class _TodoAppState extends State<TodoApp> {
   void _toggleTodo(int index) {
     setState(() {
       _todos[index].completed = !_todos[index].completed;
+    });
+  }
+
+  void _pickImage() {
+    html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
+    uploadInput.accept = 'image/*';
+    uploadInput.capture = 'environment';
+    uploadInput.click();
+
+    uploadInput.onChange.listen((e) {
+      final file = uploadInput.files?.first;
+      if (file != null) {
+        final reader = html.FileReader();
+        reader.readAsDataUrl(file);
+        reader.onLoadEnd.listen((e) {
+          setState(() {
+            _imageUrl = reader.result as String;
+          });
+        });
+      }
     });
   }
 
@@ -152,38 +174,49 @@ class _TodoAppState extends State<TodoApp> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Patrick ToDo'),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          child: const Icon(CupertinoIcons.slider_horizontal_3),
-          onPressed: () => showCupertinoModalPopup(
-            context: context,
-            builder: (context) => CupertinoActionSheet(
-              title: const Text('Filter wählen'),
-              actions: [
-                CupertinoActionSheetAction(
-                  onPressed: () => setState(() => _filter = FilterOption.all),
-                  child: const Text('Alle'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              child: const Icon(CupertinoIcons.camera),
+              onPressed: _pickImage,
+            ),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              child: const Icon(CupertinoIcons.slider_horizontal_3),
+              onPressed: () => showCupertinoModalPopup(
+                context: context,
+                builder: (context) => CupertinoActionSheet(
+                  title: const Text('Filter wählen'),
+                  actions: [
+                    CupertinoActionSheetAction(
+                      onPressed: () => setState(() => _filter = FilterOption.all),
+                      child: const Text('Alle'),
+                    ),
+                    CupertinoActionSheetAction(
+                      onPressed: () => setState(() => _filter = FilterOption.completed),
+                      child: const Text('Erledigt'),
+                    ),
+                    CupertinoActionSheetAction(
+                      onPressed: () => setState(() => _filter = FilterOption.active),
+                      child: const Text('Offen'),
+                    ),
+                  ],
+                  cancelButton: CupertinoActionSheetAction(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Abbrechen'),
+                  ),
                 ),
-                CupertinoActionSheetAction(
-                  onPressed: () => setState(() => _filter = FilterOption.completed),
-                  child: const Text('Erledigt'),
-                ),
-                CupertinoActionSheetAction(
-                  onPressed: () => setState(() => _filter = FilterOption.active),
-                  child: const Text('Offen'),
-                ),
-              ],
-              cancelButton: CupertinoActionSheetAction(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Abbrechen'),
               ),
             ),
-          ),
+          ],
         ),
       ),
       child: SafeArea(
         child: Column(
           children: [
+            if (_imageUrl != null) Image.network(_imageUrl!),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
