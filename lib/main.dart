@@ -94,6 +94,15 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
+class TodoItem {
+  String title;
+  bool completed;
+
+  TodoItem(this.title, {this.completed = false});
+}
+
+enum FilterOption { all, completed, active }
+
 class TodoApp extends StatefulWidget {
   const TodoApp({super.key});
 
@@ -102,22 +111,53 @@ class TodoApp extends StatefulWidget {
 }
 
 class _TodoAppState extends State<TodoApp> {
-  final List<String> _todos = [];
+  final List<TodoItem> _todos = [];
   final TextEditingController _todoController = TextEditingController();
+  FilterOption _filter = FilterOption.all;
 
   void _addTodo() {
     if (_todoController.text.isNotEmpty) {
       setState(() {
-        _todos.add(_todoController.text);
+        _todos.add(TodoItem(_todoController.text));
         _todoController.clear();
       });
+    }
+  }
+
+  void _toggleTodo(int index) {
+    setState(() {
+      _todos[index].completed = !_todos[index].completed;
+    });
+  }
+
+  List<TodoItem> get _filteredTodos {
+    switch (_filter) {
+      case FilterOption.completed:
+        return _todos.where((todo) => todo.completed).toList();
+      case FilterOption.active:
+        return _todos.where((todo) => !todo.completed).toList();
+      case FilterOption.all:
+      default:
+        return _todos;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Patrick's ToDo App")),
+      appBar: AppBar(
+        title: const Text("Patrick's ToDo App"),
+        actions: [
+          PopupMenuButton<FilterOption>(
+            onSelected: (value) => setState(() => _filter = value),
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: FilterOption.all, child: Text('Alle')),
+              const PopupMenuItem(value: FilterOption.completed, child: Text('Erledigt')),
+              const PopupMenuItem(value: FilterOption.active, child: Text('Offen')),
+            ],
+          )
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -139,11 +179,18 @@ class _TodoAppState extends State<TodoApp> {
             const SizedBox(height: 20),
             Expanded(
               child: ListView.builder(
-                itemCount: _todos.length,
+                itemCount: _filteredTodos.length,
                 itemBuilder: (context, index) {
-                  return ListTile(
-                    leading: const Icon(Icons.check_box_outline_blank),
-                    title: Text(_todos[index]),
+                  final todo = _filteredTodos[index];
+                  return CheckboxListTile(
+                    title: Text(
+                      todo.title,
+                      style: TextStyle(
+                        decoration: todo.completed ? TextDecoration.lineThrough : null,
+                      ),
+                    ),
+                    value: todo.completed,
+                    onChanged: (_) => _toggleTodo(_todos.indexOf(todo)),
                   );
                 },
               ),
