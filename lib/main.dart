@@ -138,9 +138,9 @@ class _TodoAppState extends State<TodoApp> {
   }
 
   void _pickImage() {
-    html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
+    final uploadInput = html.FileUploadInputElement();
     uploadInput.accept = 'image/*';
-    uploadInput.capture = 'environment';
+    uploadInput.capture = 'user';
     uploadInput.click();
 
     uploadInput.onChange.listen((e) {
