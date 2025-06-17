@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -9,9 +10,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const CupertinoApp(
       debugShowCheckedModeBanner: false,
-      home: const LoginPage(),
+      home: LoginPage(),
     );
   }
 }
@@ -31,35 +32,39 @@ class _LoginPageState extends State<LoginPage> {
     if (_usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const SplashScreen()),
+        CupertinoPageRoute(builder: (context) => const SplashScreen()),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _usernameController,
-                decoration: const InputDecoration(labelText: 'Username'),
-              ),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _login,
-                child: const Text('Login'),
-              ),
-            ],
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(middle: Text('Login')),
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CupertinoTextField(
+                  controller: _usernameController,
+                  placeholder: 'Username',
+                ),
+                const SizedBox(height: 12),
+                CupertinoTextField(
+                  controller: _passwordController,
+                  placeholder: 'Password',
+                  obscureText: true,
+                ),
+                const SizedBox(height: 20),
+                CupertinoButton.filled(
+                  onPressed: _login,
+                  child: const Text('Login'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -81,15 +86,15 @@ class _SplashScreenState extends State<SplashScreen> {
     Future.delayed(const Duration(seconds: 2), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const TodoApp()),
+        CupertinoPageRoute(builder: (context) => const TodoApp()),
       );
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Welcome! Loading your ToDo app...', style: TextStyle(fontSize: 20))),
+    return const CupertinoPageScaffold(
+      child: Center(child: Text('Welcome! Loading your ToDo app...', style: TextStyle(fontSize: 18))),
     );
   }
 }
@@ -144,59 +149,101 @@ class _TodoAppState extends State<TodoApp> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Patrick's ToDo App"),
-        actions: [
-          PopupMenuButton<FilterOption>(
-            onSelected: (value) => setState(() => _filter = value),
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: FilterOption.all, child: Text('Alle')),
-              const PopupMenuItem(value: FilterOption.completed, child: Text('Erledigt')),
-              const PopupMenuItem(value: FilterOption.active, child: Text('Offen')),
-            ],
-          )
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _todoController,
-                    decoration: const InputDecoration(hintText: 'Enter a task'),
-                  ),
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Patrick ToDo'),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          child: const Icon(CupertinoIcons.slider_horizontal_3),
+          onPressed: () => showCupertinoModalPopup(
+            context: context,
+            builder: (context) => CupertinoActionSheet(
+              title: const Text('Filter wählen'),
+              actions: [
+                CupertinoActionSheetAction(
+                  onPressed: () => setState(() => _filter = FilterOption.all),
+                  child: const Text('Alle'),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: _addTodo,
+                CupertinoActionSheetAction(
+                  onPressed: () => setState(() => _filter = FilterOption.completed),
+                  child: const Text('Erledigt'),
+                ),
+                CupertinoActionSheetAction(
+                  onPressed: () => setState(() => _filter = FilterOption.active),
+                  child: const Text('Offen'),
                 ),
               ],
+              cancelButton: CupertinoActionSheetAction(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Abbrechen'),
+              ),
             ),
-            const SizedBox(height: 20),
+          ),
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: CupertinoTextField(
+                      controller: _todoController,
+                      placeholder: 'Neue Aufgabe',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  CupertinoButton(
+                    child: const Icon(CupertinoIcons.add),
+                    onPressed: _addTodo,
+                  ),
+                ],
+              ),
+            ),
             Expanded(
               child: ListView.builder(
                 itemCount: _filteredTodos.length,
                 itemBuilder: (context, index) {
                   final todo = _filteredTodos[index];
-                  return CheckboxListTile(
+                  return CupertinoListTile(
                     title: Text(
                       todo.title,
                       style: TextStyle(
                         decoration: todo.completed ? TextDecoration.lineThrough : null,
                       ),
                     ),
-                    value: todo.completed,
-                    onChanged: (_) => _toggleTodo(_todos.indexOf(todo)),
+                    trailing: CupertinoSwitch(
+                      value: todo.completed,
+                      onChanged: (_) => _toggleTodo(_todos.indexOf(todo)),
+                    ),
                   );
                 },
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class CupertinoListTile extends StatelessWidget {
+  final Widget title;
+  final Widget? trailing;
+  const CupertinoListTile({super.key, required this.title, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: CupertinoColors.systemGrey4)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [title, if (trailing != null) trailing!],
       ),
     );
   }
