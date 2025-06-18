@@ -4,8 +4,21 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isLoggedIn = false;
+
+  void _login() {
+    setState(() {
+      _isLoggedIn = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +43,46 @@ class MyApp extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(36),
-              child: const CalculatorWidget(),
+              child: _isLoggedIn ? const CalculatorWidget() : LoginRegisterScreen(onLogin: _login),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class LoginRegisterScreen extends StatelessWidget {
+  final VoidCallback onLogin;
+  const LoginRegisterScreen({super.key, required this.onLogin});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('Welcome', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 40),
+          TextField(
+            decoration: const InputDecoration(labelText: 'Email'),
+          ),
+          TextField(
+            decoration: const InputDecoration(labelText: 'Password'),
+            obscureText: true,
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: onLogin,
+            child: const Text('Login'),
+          ),
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: () {},
+            child: const Text('Register'),
+          ),
+        ],
       ),
     );
   }
