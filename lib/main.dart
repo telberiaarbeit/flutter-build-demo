@@ -26,46 +26,95 @@ class CalculatorWidget extends StatefulWidget {
 }
 
 class _CalculatorWidgetState extends State<CalculatorWidget> {
-  final TextEditingController _controller1 = TextEditingController();
-  final TextEditingController _controller2 = TextEditingController();
-  double? _result;
+  String _display = '';
+  String _result = '';
 
-  void _addNumbers() {
-    final double num1 = double.tryParse(_controller1.text) ?? 0;
-    final double num2 = double.tryParse(_controller2.text) ?? 0;
+  void _onPressed(String value) {
     setState(() {
-      _result = num1 + num2;
+      if (value == 'C') {
+        _display = '';
+        _result = '';
+      } else if (value == '=') {
+        try {
+          _result = _evaluate(_display);
+        } catch (e) {
+          _result = 'Error';
+        }
+      } else {
+        _display += value;
+      }
     });
+  }
+
+  String _evaluate(String expression) {
+    try {
+      final result = double.parse(_calculate(expression));
+      return result.toString();
+    } catch (_) {
+      return 'Error';
+    }
+  }
+
+  String _calculate(String expr) {
+    // Simple expression evaluation using Dart
+    expr = expr.replaceAll('x', '*');
+    expr = expr.replaceAll('÷', '/');
+    final exp = expr.replaceAllMapped(
+        RegExp(r'(?<=\d)([+\-*/])(?=\d)'),
+        (Match m) => ' ${m.group(0)} ');
+    final parts = exp.split(' ');
+    double total = double.parse(parts[0]);
+    for (int i = 1; i < parts.length; i += 2) {
+      String op = parts[i];
+      double num = double.parse(parts[i + 1]);
+      if (op == '+') total += num;
+      if (op == '-') total -= num;
+      if (op == '*') total *= num;
+      if (op == '/') total /= num;
+    }
+    return total.toString();
+  }
+
+  Widget _buildButton(String value) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: ElevatedButton(
+          onPressed: () => _onPressed(value),
+          child: Text(value, style: const TextStyle(fontSize: 24)),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('Hello, World!', style: TextStyle(fontSize: 24)),
-          TextField(
-            controller: _controller1,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Enter first number'),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text('Hello, World!', style: TextStyle(fontSize: 24)),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text(_display, style: const TextStyle(fontSize: 32)),
+              const SizedBox(height: 10),
+              Text(_result, style: const TextStyle(fontSize: 24, color: Colors.grey)),
+            ],
           ),
-          TextField(
-            controller: _controller2,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Enter second number'),
+        ),
+        Expanded(
+          child: Column(
+            children: [
+              Row(children: [_buildButton('7'), _buildButton('8'), _buildButton('9'), _buildButton('/')]),
+              Row(children: [_buildButton('4'), _buildButton('5'), _buildButton('6'), _buildButton('x')]),
+              Row(children: [_buildButton('1'), _buildButton('2'), _buildButton('3'), _buildButton('-')]),
+              Row(children: [_buildButton('0'), _buildButton('.'), _buildButton('='), _buildButton('+')]),
+              Row(children: [_buildButton('C')]),
+            ],
           ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _addNumbers,
-            child: const Text('Add'),
-          ),
-          const SizedBox(height: 20),
-          if (_result != null)
-            Text('Result: $_result', style: const TextStyle(fontSize: 20)),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
