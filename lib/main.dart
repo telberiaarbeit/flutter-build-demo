@@ -11,8 +11,29 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Hello World with Calculator')),
-        body: const CalculatorWidget(),
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Container(
+            width: 375,
+            height: 812,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(40),
+              border: Border.all(color: Colors.black, width: 4),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 20,
+                  offset: Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(36),
+              child: const CalculatorWidget(),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -56,7 +77,6 @@ class _CalculatorWidgetState extends State<CalculatorWidget> {
   }
 
   String _calculate(String expr) {
-    // Simple expression evaluation using Dart
     expr = expr.replaceAll('x', '*');
     expr = expr.replaceAll('÷', '/');
     final exp = expr.replaceAllMapped(
@@ -81,6 +101,11 @@ class _CalculatorWidgetState extends State<CalculatorWidget> {
         padding: const EdgeInsets.all(4.0),
         child: ElevatedButton(
           onPressed: () => _onPressed(value),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.all(20),
+            backgroundColor: Colors.blueGrey.shade50,
+            foregroundColor: Colors.black,
+          ),
           child: Text(value, style: const TextStyle(fontSize: 24)),
         ),
       ),
@@ -90,8 +115,8 @@ class _CalculatorWidgetState extends State<CalculatorWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const SizedBox(height: 50),
         const Text('Hello, World!', style: TextStyle(fontSize: 24)),
         Padding(
           padding: const EdgeInsets.all(16.0),
