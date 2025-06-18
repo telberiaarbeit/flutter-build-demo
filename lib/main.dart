@@ -52,9 +52,16 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class LoginRegisterScreen extends StatelessWidget {
+class LoginRegisterScreen extends StatefulWidget {
   final VoidCallback onLogin;
   const LoginRegisterScreen({super.key, required this.onLogin});
+
+  @override
+  State<LoginRegisterScreen> createState() => _LoginRegisterScreenState();
+}
+
+class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
+  bool isRegistering = false;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +70,7 @@ class LoginRegisterScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Welcome', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+          Text(isRegistering ? 'Register' : 'Welcome', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
           const SizedBox(height: 40),
           TextField(
             decoration: const InputDecoration(labelText: 'Email'),
@@ -74,13 +81,17 @@ class LoginRegisterScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: onLogin,
-            child: const Text('Login'),
+            onPressed: widget.onLogin,
+            child: Text(isRegistering ? 'Register' : 'Login'),
           ),
           const SizedBox(height: 10),
           TextButton(
-            onPressed: () {},
-            child: const Text('Register'),
+            onPressed: () {
+              setState(() {
+                isRegistering = !isRegistering;
+              });
+            },
+            child: Text(isRegistering ? 'Back to Login' : 'Register'),
           ),
         ],
       ),
