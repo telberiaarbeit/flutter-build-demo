@@ -62,38 +62,54 @@ class LoginRegisterScreen extends StatefulWidget {
 
 class _LoginRegisterScreenState extends State<LoginRegisterScreen> {
   bool isRegistering = false;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      widget.onLogin();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(isRegistering ? 'Register' : 'Welcome', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 40),
-          TextField(
-            decoration: const InputDecoration(labelText: 'Email'),
-          ),
-          TextField(
-            decoration: const InputDecoration(labelText: 'Password'),
-            obscureText: true,
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: widget.onLogin,
-            child: Text(isRegistering ? 'Register' : 'Login'),
-          ),
-          const SizedBox(height: 10),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                isRegistering = !isRegistering;
-              });
-            },
-            child: Text(isRegistering ? 'Back to Login' : 'Register'),
-          ),
-        ],
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(isRegistering ? 'Register' : 'Welcome', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 40),
+            TextFormField(
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+              validator: (value) => value == null || value.isEmpty ? 'Email required' : null,
+            ),
+            TextFormField(
+              controller: _passwordController,
+              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: true,
+              validator: (value) => value == null || value.isEmpty ? 'Password required' : null,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _submit,
+              child: Text(isRegistering ? 'Register' : 'Login'),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  isRegistering = !isRegistering;
+                });
+              },
+              child: Text(isRegistering ? 'Back to Login' : 'Register'),
+            ),
+          ],
+        ),
       ),
     );
   }
