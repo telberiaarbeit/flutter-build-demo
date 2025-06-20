@@ -9408,8 +9408,9 @@ Ba:function Ba(){},
 abR(){return new A.p7(new A.ND(),A.x(t.K,t.cP))},
 SH:function SH(a,b){this.a=a
 this.b=b},
-pG:function pG(a,b){this.e=a
-this.a=b},
+pG:function pG(a,b,c){this.e=a
+this.cx=b
+this.a=c},
 ND:function ND(){},
 NH:function NH(){},
 tx:function tx(a){var _=this
@@ -36564,11 +36565,11 @@ j.a.toString
 $.a7b()
 k=new A.nD(o,k,B.am,B.ae,i,i)
 return new A.qR(A.ZV(k,l,i,i,n),i)},
-Kv(a){var s,r=this,q=null,p=r.a
-p=p.e
+Kv(a){var s,r=this,q=null,p=r.a,o=p.e
+p=p.cx
 s=r.gOl()
 r.a.toString
-return new A.rJ(q,q,q,new A.VT(),q,q,q,q,q,p,B.Bn,q,q,q,B.zv,r.gOs(),"",q,B.Hb,B.dL,q,s,q,q,B.j5,!1,!1,!1,!1,r.gO9(),!0,q,q,q,new A.jB(r,t.By))},
+return new A.rJ(q,q,q,new A.VT(),q,q,q,q,q,o,B.Bn,q,q,q,B.zv,r.gOs(),p,q,B.Hb,B.dL,q,s,q,q,B.j5,!1,!1,!1,!1,r.gO9(),!0,q,q,q,new A.jB(r,t.By))},
 P(a){var s,r=null,q=A.x9(!1,!1,this.Kv(a),r,r,r,r,!0,r,r,r,new A.VU(),r,r)
 this.a.toString
 s=this.d
@@ -53834,7 +53835,7 @@ ez(a,b){var s=this.a,r=J.bC(s)
 if(b?r.B(s,a):r.A(s,a))this.aM()}}
 A.yb.prototype={
 P(a){var s=null
-return new A.pG(new A.qQ(new A.nM(B.IJ,new A.EG(s,s,1/0,56),s),B.wc,s),s)}}
+return new A.pG(new A.qQ(new A.nM(B.IK,new A.EG(s,s,1/0,56),s),B.wc,s),"Phuc App",s)}}
 A.b0.prototype={
 aE(a){var s=a.a,r=this.a
 r[15]=s[15]
@@ -55917,8 +55918,8 @@ B.w5=new A.FQ()
 B.w6=new A.FZ()
 B.w7=new A.GE()
 B.wb=new A.o1(null,null,null,null,null,null,null)
-B.IK=new A.mj("Hello, Flutter Web!",null,null,null,null)
-B.wc=new A.o2(B.a8,null,null,B.IK,null)
+B.IJ=new A.mj("Hello, Flutter Web! This is Phuc App.",null,null,null,null)
+B.wc=new A.o2(B.a8,null,null,B.IJ,null)
 B.wd=new A.o3(null,null,null,null,null,null,null,null,null)
 B.we=new A.o4(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.wf=new A.cp(0,B.p)
@@ -57697,7 +57698,7 @@ B.HX=new A.m(!0,B.x,null,"Roboto",B.y,null,null,null,null,null,null,null,null,nu
 B.Hp=new A.m(!0,B.k,null,"Roboto",B.y,null,null,null,null,null,null,null,null,null,null,null,null,B.e,null,null,null,"blackHelsinki labelMedium",null,null,null,null)
 B.Hz=new A.m(!0,B.k,null,"Roboto",B.y,null,null,null,null,null,null,null,null,null,null,null,null,B.e,null,null,null,"blackHelsinki labelSmall",null,null,null,null)
 B.II=new A.cE(B.If,B.FY,B.GK,B.Ho,B.HB,B.Fv,B.Go,B.Fz,B.Hc,B.HN,B.GQ,B.HO,B.HX,B.Hp,B.Hz)
-B.IJ=new A.mj("Hello World 1",null,null,null,null)
+B.IK=new A.mj("Welcome to Phuc App",null,null,null,null)
 B.L9=new A.SH(0,"system")
 B.IL=new A.rt(null)
 B.eg=new A.AJ(0,"clamp")
