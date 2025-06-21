@@ -11,15 +11,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Tiere Icons')),
-        body: const AnimalIcons(),
+        appBar: AppBar(title: const Text('Tier-Vokabeltraining')),
+        body: const AnimalQuizGrid(),
       ),
     );
   }
 }
 
-class AnimalIcons extends StatelessWidget {
-  const AnimalIcons({super.key});
+class AnimalQuizGrid extends StatelessWidget {
+  const AnimalQuizGrid({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,39 +29,62 @@ class AnimalIcons extends StatelessWidget {
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
       children: const [
-        AnimalCard(name: 'Eidechse', emoji: '🦎'),
-        AnimalCard(name: 'Wellensittich', emoji: '🐦'),
-        AnimalCard(name: 'Chinchilla', emoji: '🐹'),
-        AnimalCard(name: 'Fuchs', emoji: '🦊'),
+        AnimalQuizCard(name: 'Eidechse', emoji: '🦎', solution: 'eidechse'),
+        AnimalQuizCard(name: 'Wellensittich', emoji: '🐦', solution: 'wellensittich'),
+        AnimalQuizCard(name: 'Chinchilla', emoji: '🐹', solution: 'chinchilla'),
+        AnimalQuizCard(name: 'Fuchs', emoji: '🦊', solution: 'fuchs'),
       ],
     );
   }
 }
 
-class AnimalCard extends StatelessWidget {
+class AnimalQuizCard extends StatefulWidget {
   final String name;
   final String emoji;
+  final String solution;
 
-  const AnimalCard({required this.name, required this.emoji, super.key});
+  const AnimalQuizCard({required this.name, required this.emoji, required this.solution, super.key});
+
+  @override
+  State<AnimalQuizCard> createState() => _AnimalQuizCardState();
+}
+
+class _AnimalQuizCardState extends State<AnimalQuizCard> {
+  final TextEditingController _controller = TextEditingController();
+  String _feedback = '';
+
+  void _checkAnswer() {
+    final input = _controller.text.trim().toLowerCase();
+    setState(() {
+      _feedback = input == widget.solution ? '✅' : '❌';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 4,
-      child: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              emoji,
-              style: const TextStyle(fontSize: 48),
+            Text(widget.emoji, style: const TextStyle(fontSize: 48)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _controller,
+              decoration: const InputDecoration(
+                hintText: 'Wie heißt das Tier?',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 8),
-            Text(
-              name,
-              style: const TextStyle(fontSize: 18),
+            ElevatedButton(
+              onPressed: _checkAnswer,
+              child: const Text('Prüfen'),
             ),
+            Text(_feedback, style: const TextStyle(fontSize: 20)),
           ],
         ),
       ),
