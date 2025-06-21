@@ -11,66 +11,59 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Bild-Wort-Spiel')),
-        body: const WordQuiz(),
+        appBar: AppBar(title: const Text('Tiere Icons')),
+        body: const AnimalIcons(),
       ),
     );
   }
 }
 
-class WordQuiz extends StatefulWidget {
-  const WordQuiz({super.key});
-
-  @override
-  State<WordQuiz> createState() => _WordQuizState();
-}
-
-class _WordQuizState extends State<WordQuiz> {
-  final TextEditingController _controller = TextEditingController();
-  final String _correctWord = 'cat';
-  String _feedback = '';
-
-  void _checkAnswer() {
-    if (_controller.text.trim().toLowerCase() == _correctWord) {
-      setState(() {
-        _feedback = '✅ Richtig!';
-      });
-    } else {
-      setState(() {
-        _feedback = '❌ Falsch, versuch es nochmal.';
-      });
-    }
-  }
+class AnimalIcons extends StatelessWidget {
+  const AnimalIcons({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          Image.network(
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/81_INF_DIV_SSI.jpg/800px-81_INF_DIV_SSI.jpg',
-            height: 200,
-          ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: _controller,
-            decoration: const InputDecoration(
-              labelText: 'Wie heißt das auf Englisch? (3 Buchstaben)',
-              border: OutlineInputBorder(),
+    return GridView.count(
+      crossAxisCount: 2,
+      padding: const EdgeInsets.all(16),
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      children: const [
+        AnimalCard(name: 'Eidechse', emoji: '🦎'),
+        AnimalCard(name: 'Wellensittich', emoji: '🐦'),
+        AnimalCard(name: 'Chinchilla', emoji: '🐹'),
+        AnimalCard(name: 'Fuchs', emoji: '🦊'),
+      ],
+    );
+  }
+}
+
+class AnimalCard extends StatelessWidget {
+  final String name;
+  final String emoji;
+
+  const AnimalCard({required this.name, required this.emoji, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              emoji,
+              style: const TextStyle(fontSize: 48),
             ),
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: _checkAnswer,
-            child: const Text('Prüfen'),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _feedback,
-            style: const TextStyle(fontSize: 18),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              name,
+              style: const TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
       ),
     );
   }
