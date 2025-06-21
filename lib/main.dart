@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'tts/tts_interface.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,45 +11,43 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'English Word Speaker',
-      home: const WordSpeakerPage(),
+      title: 'Conditional TTS App',
+      home: const TtsPage(),
     );
   }
 }
 
-class WordSpeakerPage extends StatefulWidget {
-  const WordSpeakerPage({super.key});
+class TtsPage extends StatefulWidget {
+  const TtsPage({super.key});
 
   @override
-  State<WordSpeakerPage> createState() => _WordSpeakerPageState();
+  State<TtsPage> createState() => _TtsPageState();
 }
 
-class _WordSpeakerPageState extends State<WordSpeakerPage> {
+class _TtsPageState extends State<TtsPage> {
   final TextEditingController _controller = TextEditingController();
-  final FlutterTts _flutterTts = FlutterTts();
+  final TextSpeaker _speaker = TextSpeaker();
 
-  Future<void> _speak() async {
-    String text = _controller.text.trim();
+  void _speak() {
+    final text = _controller.text.trim();
     if (text.isNotEmpty) {
-      await _flutterTts.setLanguage("en-US");
-      await _flutterTts.speak(text);
+      _speaker.speak(text);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Speak English Word')),
+      appBar: AppBar(title: const Text('Speak Word')),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
               controller: _controller,
               decoration: const InputDecoration(
+                labelText: 'Enter word',
                 border: OutlineInputBorder(),
-                labelText: 'Enter an English word',
               ),
             ),
             const SizedBox(height: 20),
