@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'tts/tts_interface.dart';
+import 'tts_interface.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Conditional TTS App',
+      title: 'Vocab Speaker',
       home: const TtsPage(),
     );
   }
@@ -38,7 +38,7 @@ class _TtsPageState extends State<TtsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Speak Word')),
+      appBar: AppBar(title: const Text('Vocab Speaker')),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -46,7 +46,7 @@ class _TtsPageState extends State<TtsPage> {
             TextField(
               controller: _controller,
               decoration: const InputDecoration(
-                labelText: 'Enter word',
+                labelText: 'Enter vocabulary word',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -59,5 +59,34 @@ class _TtsPageState extends State<TtsPage> {
         ),
       ),
     );
+  }
+}
+
+// tts_interface.dart
+export 'tts_web.dart'
+    if (dart.library.io) 'tts_mobile.dart';
+
+// tts_mobile.dart
+import 'package:flutter_tts/flutter_tts.dart';
+
+class TextSpeaker {
+  final FlutterTts _flutterTts = FlutterTts();
+
+  Future<void> speak(String text) async {
+    await _flutterTts.setLanguage("en-US");
+    await _flutterTts.speak(text);
+  }
+}
+
+// tts_web.dart
+import 'dart:html';
+
+class TextSpeaker {
+  Future<void> speak(String text) async {
+    final synth = window.speechSynthesis;
+    final utterance = SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    synth.cancel();
+    synth.speak(utterance);
   }
 }
