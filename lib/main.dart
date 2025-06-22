@@ -11,15 +11,22 @@ class TodoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'To-Do App',
-      home: TodoHomePage(),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+        useMaterial3: true,
+        scaffoldBackgroundColor: Colors.white,
+      ),
+      home: const TodoHomePage(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class TodoHomePage extends StatefulWidget {
+  const TodoHomePage({super.key});
+
   @override
-  _TodoHomePageState createState() => _TodoHomePageState();
+  State<TodoHomePage> createState() => _TodoHomePageState();
 }
 
 class _TodoHomePageState extends State<TodoHomePage> {
@@ -52,42 +59,71 @@ class _TodoHomePageState extends State<TodoHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Meine To-Do Liste')),
+      appBar: AppBar(
+        title: const Text('Meine To-Do Liste'),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Neue Aufgabe',
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: _addTodo,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _todos.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(
-                      _todos[index],
-                      style: TextStyle(
-                        color: index == 1 ? Colors.green : null,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: 'Neue Aufgabe',
+                        border: InputBorder.none,
                       ),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _removeTodo(index),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add, color: Colors.blueAccent),
+                    onPressed: _addTodo,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: ListView.separated(
+                itemCount: _todos.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: index == 1 ? Colors.green.shade100 : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _todos[index],
+                            style: TextStyle(
+                              color: index == 1 ? Colors.green.shade800 : Colors.black,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.redAccent),
+                          onPressed: () => _removeTodo(index),
+                        ),
+                      ],
                     ),
                   );
                 },
