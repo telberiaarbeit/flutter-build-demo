@@ -79,7 +79,12 @@ class _TodoHomePageState extends State<TodoHomePage> {
                 itemCount: _todos.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(_todos[index]),
+                    title: Text(
+                      _todos[index],
+                      style: TextStyle(
+                        color: index == 1 ? Colors.green : null,
+                      ),
+                    ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete),
                       onPressed: () => _removeTodo(index),
