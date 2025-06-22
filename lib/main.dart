@@ -27,6 +27,13 @@ class _TodoHomePageState extends State<TodoHomePage> {
   final TextEditingController _controller = TextEditingController();
 
   void _addTodo() {
+    if (_todos.length >= 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Maximal 2 Aufgaben erlaubt.')),
+      );
+      return;
+    }
+
     final text = _controller.text;
     if (text.isNotEmpty) {
       setState(() {
