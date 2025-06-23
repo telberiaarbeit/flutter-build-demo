@@ -5,20 +5,27 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: .*
+          include: true
+          source: true
+
     scripts:
       - name: Install dependencies
-        script: flutter pub get
+        script: |
+          flutter pub get
+
       - name: Build Android APK
-        script: flutter build apk --release
-      - name: Build iOS app (simulator only or unsigned)
-        script: flutter build ios --release --no-codesign
+        script: |
+          flutter build apk --release
+
+      - name: Build iOS app (unsigned)
+        script: |
+          flutter build ios --release --no-codesign
+
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
       - build/ios/iphoneos/Runner.app
-
-trigger:
-  events:
-    - push
-  branches:
-    only:
-      - main
