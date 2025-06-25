@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 void main() {
+  usePathUrlStrategy();
   runApp(const CryptoDashboardApp());
 }
 
@@ -93,3 +95,10 @@ class _CryptoDashboardState extends State<CryptoDashboard> {
     );
   }
 }
+
+// vercel.json
+// {
+//   "rewrites": [
+//     { "source": "/(.*)", "destination": "/index.html" }
+//   ]
+// }
