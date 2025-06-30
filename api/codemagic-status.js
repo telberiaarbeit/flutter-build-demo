@@ -1,0 +1,108 @@
+const fetch = global.fetch || ((...args) =>
+  import('node-fetch').then(({ default: fetch }) => fetch(...args)));
+
+const CODEMAGIC_TOKEN = process.env.CODEMAGIC_TOKEN;
+const CODEMAGIC_APP_ID = process.env.CODEMAGIC_APP_ID;
+const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
+const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID;
+
+export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Only GET allowed' });
+  }
+
+  const BRANCH = req.query.branch;
+  if (!BRANCH) {
+    return res.status(400).json({ error: 'Missing branch name' });
+  }
+
+  const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+  const maxRetries = 12;
+
+  let codemagicStatus = null;
+  let codemagicBuildId = null;
+  let codemagicArtifacts = [];
+
+  try {
+    // Step 1: Poll Codemagic for latest build
+    for (let i = 0; i < maxRetries; i++) {
+      const resp = await fetch(
+        `https://api.codemagic.io/builds?appId=${CODEMAGIC_APP_ID}&branch=${BRANCH}&limit=1`,
+        {
+          headers: { Authorization: `Bearer ${CODEMAGIC_TOKEN}` },
+        }
+      );
+
+      const data = await resp.json();
+      const latestBuild = data?.[0];
+
+      codemagicStatus = latestBuild?.status;
+      codemagicBuildId = latestBuild?.id;
+
+      if (codemagicStatus === 'finished' || codemagicStatus === 'failed') break;
+      await delay(2500);
+    }
+
+    // Step 2: If build failed or still running
+    if (!codemagicBuildId || codemagicStatus !== 'finished') {
+      return res.status(200).json({
+        status: 'DEPLOYING',
+        codemagicStatus,
+        message: 'Codemagic build not yet complete.',
+      });
+    }
+
+    // Step 3: Get artifacts from Codemagic
+    const artifactResp = await fetch(
+      `https://api.codemagic.io/builds/${codemagicBuildId}/artifacts`,
+      {
+        headers: { Authorization: `Bearer ${CODEMAGIC_TOKEN}` },
+      }
+    );
+
+    const artifacts = await artifactResp.json();
+    codemagicArtifacts = artifacts?.map((a) => ({
+      name: a.name,
+      url: a.url,
+    })) || [];
+
+    // Step 4: Poll Vercel deployment
+    let matchedDeployment = null;
+    for (let i = 0; i < maxRetries; i++) {
+      const vercelResp = await fetch(
+        `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=20`,
+        {
+          headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
+        }
+      );
+
+      const vercelData = await vercelResp.json();
+
+      matchedDeployment = vercelData.deployments
+        ?.filter(
+          (d) =>
+            d.meta?.githubCommitRef?.toLowerCase() === BRANCH.toLowerCase()
+        )
+        .sort((a, b) => b.createdAt - a.createdAt)?.[0];
+
+      if (matchedDeployment?.state === 'READY') break;
+      if (!matchedDeployment || matchedDeployment?.state === 'ERROR') break;
+
+      await delay(2500);
+    }
+
+    return res.status(200).json({
+      status: matchedDeployment?.state === 'READY' ? 'READY' : 'DEPLOYING',
+      deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
+      codemagicStatus,
+      codemagicBuildId,
+      codemagicArtifacts,
+      vercelState: matchedDeployment?.state || null,
+      vercelBranch: matchedDeployment?.meta?.githubCommitRef || null,
+    });
+
+  } catch (err) {
+    console.error('Error checking status:', err);
+    return res.status(500).json({ error: 'Failed to check deployment status' });
+  }
+}
