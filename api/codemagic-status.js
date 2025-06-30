@@ -3,6 +3,7 @@ const fetch = global.fetch || ((...args) =>
 
 const CODEMAGIC_TOKEN = process.env.CODEMAGIC_TOKEN;
 const CODEMAGIC_APP_ID = process.env.CODEMAGIC_APP_ID;
+const WORKFLOW_ID = process.env.WORKFLOW_ID;
 const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
 const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID;
 
@@ -26,12 +27,10 @@ export default async function handler(req, res) {
   try {
     // Step 1: Poll Codemagic for latest build
     for (let i = 0; i < maxRetries; i++) {
-      const resp = await fetch(
-        `https://api.codemagic.io/builds?appId=${CODEMAGIC_APP_ID}&branch=${BRANCH}&limit=1`,
-        {
-          headers: { Authorization: `Bearer ${CODEMAGIC_TOKEN}` },
-        }
-      );
+      const url = `https://api.codemagic.io/builds?appId=${CODEMAGIC_APP_ID}&workflow_id=${WORKFLOW_ID}&branch=${BRANCH}&limit=1`;
+      const resp = await fetch(url, {
+        headers: { Authorization: `Bearer ${CODEMAGIC_TOKEN}` },
+      });
 
       const data = await resp.json();
       const latestBuild = data?.[0];
@@ -43,7 +42,7 @@ export default async function handler(req, res) {
       await delay(2500);
     }
 
-    // Step 2: If build failed or still running
+    // Step 2: If build not finished
     if (!codemagicBuildId || codemagicStatus !== 'finished') {
       return res.status(200).json({
         status: 'DEPLOYING',
@@ -52,7 +51,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Step 3: Get artifacts from Codemagic
+    // Step 3: Fetch artifacts
     const artifactResp = await fetch(
       `https://api.codemagic.io/builds/${codemagicBuildId}/artifacts`,
       {
@@ -66,7 +65,12 @@ export default async function handler(req, res) {
       url: a.url,
     })) || [];
 
-    // Step 4: Poll Vercel deployment
+    // Step 4: Extract specific links
+    const android = codemagicArtifacts.find(a => a.name.endsWith('.apk') || a.name.endsWith('.aab'))?.url || null;
+    const ios = codemagicArtifacts.find(a => a.name.endsWith('.ipa'))?.url || null;
+    const web = codemagicArtifacts.find(a => a.name === 'web.zip')?.url || null;
+
+    // Step 5: Poll Vercel deployment
     let matchedDeployment = null;
     for (let i = 0; i < maxRetries; i++) {
       const vercelResp = await fetch(
@@ -93,12 +97,17 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       status: matchedDeployment?.state === 'READY' ? 'READY' : 'DEPLOYING',
-      deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
       codemagicStatus,
       codemagicBuildId,
-      codemagicArtifacts,
       vercelState: matchedDeployment?.state || null,
       vercelBranch: matchedDeployment?.meta?.githubCommitRef || null,
+      deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
+      artifacts: {
+        android,
+        ios,
+        web
+      },
+      allArtifacts: codemagicArtifacts,
     });
 
   } catch (err) {
