@@ -18,14 +18,15 @@ export default async function handler(req, res) {
   }
 
   const delay = (ms) => new Promise((r) => setTimeout(r, ms));
-  const maxRetries = 12;
+  const maxRetries = 10;
+  const retryDelay = 3000;
 
   let codemagicStatus = null;
   let codemagicBuildId = null;
   let codemagicArtifacts = [];
 
   try {
-    // Step 1: Poll Codemagic for latest build
+    // Step 1: Get latest build ID from branch
     for (let i = 0; i < maxRetries; i++) {
       const url = `https://api.codemagic.io/builds?appId=${CODEMAGIC_APP_ID}&workflow_id=${WORKFLOW_ID}&branch=${BRANCH}&limit=1`;
       const resp = await fetch(url, {
@@ -34,19 +35,40 @@ export default async function handler(req, res) {
 
       const data = await resp.json();
       const latestBuild = data?.[0];
-
-      codemagicStatus = latestBuild?.status;
       codemagicBuildId = latestBuild?.id;
 
-      if (codemagicStatus === 'finished' || codemagicStatus === 'failed') break;
-      await delay(2500);
+      if (codemagicBuildId) break;
+      await delay(retryDelay);
     }
 
-    // Step 2: If build not finished
-    if (!codemagicBuildId || codemagicStatus !== 'finished') {
+    if (!codemagicBuildId) {
+      return res.status(200).json({
+        status: 'DEPLOYING',
+        codemagicStatus: null,
+        message: 'No build found for branch.',
+      });
+    }
+
+    // Step 2: Poll full build status
+    for (let i = 0; i < maxRetries; i++) {
+      const buildResp = await fetch(
+        `https://api.codemagic.io/builds/${codemagicBuildId}`,
+        {
+          headers: { Authorization: `Bearer ${CODEMAGIC_TOKEN}` },
+        }
+      );
+      const buildData = await buildResp.json();
+      codemagicStatus = buildData?.status;
+
+      if (codemagicStatus === 'finished' || codemagicStatus === 'failed') break;
+      await delay(retryDelay);
+    }
+
+    if (codemagicStatus !== 'finished') {
       return res.status(200).json({
         status: 'DEPLOYING',
         codemagicStatus,
+        codemagicBuildId,
         message: 'Codemagic build not yet complete.',
       });
     }
@@ -58,7 +80,6 @@ export default async function handler(req, res) {
         headers: { Authorization: `Bearer ${CODEMAGIC_TOKEN}` },
       }
     );
-
     const artifacts = await artifactResp.json();
     codemagicArtifacts = artifacts?.map((a) => ({
       name: a.name,
@@ -81,17 +102,11 @@ export default async function handler(req, res) {
       );
 
       const vercelData = await vercelResp.json();
-
       matchedDeployment = vercelData.deployments
-        ?.filter(
-          (d) =>
-            d.meta?.githubCommitRef?.toLowerCase() === BRANCH.toLowerCase()
-        )
+        ?.filter(d => d.meta?.githubCommitRef?.toLowerCase() === BRANCH.toLowerCase())
         .sort((a, b) => b.createdAt - a.createdAt)?.[0];
 
-      if (matchedDeployment?.state === 'READY') break;
-      if (!matchedDeployment || matchedDeployment?.state === 'ERROR') break;
-
+      if (matchedDeployment?.state === 'READY' || matchedDeployment?.state === 'ERROR') break;
       await delay(2500);
     }
 
