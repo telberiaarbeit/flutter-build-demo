@@ -4,8 +4,6 @@ const fetch = global.fetch || ((...args) =>
 const CODEMAGIC_TOKEN = process.env.CODEMAGIC_TOKEN;
 const CODEMAGIC_APP_ID = process.env.CODEMAGIC_APP_ID;
 const WORKFLOW_ID = process.env.WORKFLOW_ID;
-const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
-const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID;
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -44,7 +42,6 @@ export default async function handler(req, res) {
     if (!codemagicBuildId) {
       return res.status(200).json({
         status: 'DEPLOYING',
-        codemagicStatus: null,
         message: 'No build found for branch.',
       });
     }
@@ -86,37 +83,15 @@ export default async function handler(req, res) {
       url: a.url,
     })) || [];
 
-    // Step 4: Extract specific links
+    // Step 4: Filter key artifacts
     const android = codemagicArtifacts.find(a => a.name.endsWith('.apk') || a.name.endsWith('.aab'))?.url || null;
     const ios = codemagicArtifacts.find(a => a.name.endsWith('.ipa'))?.url || null;
     const web = codemagicArtifacts.find(a => a.name === 'web.zip')?.url || null;
 
-    // Step 5: Poll Vercel deployment
-    let matchedDeployment = null;
-    for (let i = 0; i < maxRetries; i++) {
-      const vercelResp = await fetch(
-        `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&limit=20`,
-        {
-          headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
-        }
-      );
-
-      const vercelData = await vercelResp.json();
-      matchedDeployment = vercelData.deployments
-        ?.filter(d => d.meta?.githubCommitRef?.toLowerCase() === BRANCH.toLowerCase())
-        .sort((a, b) => b.createdAt - a.createdAt)?.[0];
-
-      if (matchedDeployment?.state === 'READY' || matchedDeployment?.state === 'ERROR') break;
-      await delay(2500);
-    }
-
     return res.status(200).json({
-      status: matchedDeployment?.state === 'READY' ? 'READY' : 'DEPLOYING',
+      status: 'READY',
       codemagicStatus,
       codemagicBuildId,
-      vercelState: matchedDeployment?.state || null,
-      vercelBranch: matchedDeployment?.meta?.githubCommitRef || null,
-      deploymentUrl: matchedDeployment ? `https://${matchedDeployment.url}` : null,
       artifacts: {
         android,
         ios,
@@ -126,7 +101,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error('Error checking status:', err);
-    return res.status(500).json({ error: 'Failed to check deployment status' });
+    console.error('Error checking Codemagic status:', err);
+    return res.status(500).json({ error: 'Failed to check Codemagic status' });
   }
 }
