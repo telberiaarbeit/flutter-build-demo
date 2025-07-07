@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(title: Text('My App Hello')),
         body: Center(
           child: Text(
-            'Hello, world!',
+            'Minh test',
             style: TextStyle(fontSize: 24),
           ),
         ),
