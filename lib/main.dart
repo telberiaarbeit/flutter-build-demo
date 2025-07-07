@@ -10,10 +10,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: Text('Supabase')),
+        appBar: AppBar(title: Text('subabase')),
         body: Center(
           child: Text(
-            'Supabase',
+            'subabase',
             style: TextStyle(fontSize: 24),
           ),
         ),
