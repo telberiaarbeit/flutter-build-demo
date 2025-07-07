@@ -10,10 +10,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: Text('My App Hello')),
+        appBar: AppBar(title: Text('Hello Quoc Minh')),
         body: Center(
           child: Text(
-            'Minh test',
+            'Hello Quoc Minh',
             style: TextStyle(fontSize: 24),
           ),
         ),
