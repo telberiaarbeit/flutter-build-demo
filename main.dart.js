@@ -53835,7 +53835,7 @@ ez(a,b){var s=this.a,r=J.bC(s)
 if(b?r.B(s,a):r.A(s,a))this.aM()}}
 A.yb.prototype={
 P(a){var s=null,r=A.a4y("My App Hello",s)
-return new A.pF(new A.qP(new A.nM(r,new A.EG(s,s,1/0,56),s),A.IJ(A.a4y("Hello, world!",A.mo(s,s,s,s,s,s,s,s,s,s,s,24,s,s,s,s,s,!0,s,s,s,s,s,s,s,s)),s,s),s),s)}}
+return new A.pF(new A.qP(new A.nM(r,new A.EG(s,s,1/0,56),s),A.IJ(A.a4y("Minh test",A.mo(s,s,s,s,s,s,s,s,s,s,s,24,s,s,s,s,s,!0,s,s,s,s,s,s,s,s)),s,s),s),s)}}
 A.b0.prototype={
 aE(a){var s=a.a,r=this.a
 r[15]=s[15]
