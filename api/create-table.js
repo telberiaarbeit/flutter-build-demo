@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://vzusoizwmnarilhtmzuc.supabase.co';
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6dXNvaXp3bW5hcmlsaHRtenVjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTUzMTk3OCwiZXhwIjoyMDY3MTA3OTc4fQ.ZOMX31qS82NAyjsTh5XfG0ZfMM_YG_nSH4GsqBgexGo";
 
 export default async function handler(req, res) {
     const { method, query } = req;
