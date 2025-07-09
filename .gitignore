@@ -1,0 +1,10 @@
+# Flutter & Dart
+.dart_tool/
+.buildlog/
+.packages
+.pub/
+build/
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
+macos/Flutter/ephemeral/
+**/.plugin_symlinks/
