@@ -1,58 +1,49 @@
-// Supabase credentials (do not modify)
-const supabaseUrl = 'https://ovnhubsupkhesugfrrsv.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqenNmeXN5YmlpbWlmbWV2b2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0Njg2NjUsImV4cCI6MjA2NTA0NDY2NX0.Td9-TLFTolrrddEIlJw7GMf235eCR2oGQGwSFUJDxTY';
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
-  await setupDatabase();
-  runApp(const MyApp());
-}
+const supabaseUrl = 'https://sjzsfysybiimifmevogx.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqenNmeXN5YmlpbWlmbWV2b2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0Njg2NjUsImV4cCI6MjA2NTA0NDY2NX0.Td9-TLFTolrrddEIlJw7GMf235eCR2oGQGwSFUJDxTY';
 
 // === SETUP_DB_START ===
-Future<void> setupDatabase() async {
-  final List<String> createTableSqls = [
-    '''
-    CREATE TABLE IF NOT EXISTS luke_todo_app_tasks (
-      id serial primary key,
-      title text,
-      is_complete boolean default false
-    );
-    '''
-  ];
+const String createTableSql = '''
+  CREATE TABLE IF NOT EXISTS luke_task_app_tasks (
+    id serial primary key,
+    title text not null,
+    is_complete boolean default false,
+    due_date date,
+    priority text
+  );
+''';
 
-  for (final sql in createTableSqls) {
-    await Supabase.instance.client.rpc('execute_sql', params: {'sql': sql});
-  }
+Future<void> createTableIfNotExists() async {
+  await Supabase.instance.client.rpc('execute_sql', params: {'sql': createTableSql});
 }
 // === SETUP_DB_END ===
 
 // === APP_CODE_START ===
-final String tasksTable = 'luke_todo_app_tasks';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+  await createTableIfNotExists();
+  runApp(TaskApp());
+}
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
+class TaskApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ToDo App',
-      home: const TaskPage(),
+      title: 'Task App',
+      home: TaskListPage(),
     );
   }
 }
 
-class TaskPage extends StatefulWidget {
-  const TaskPage({super.key});
-
+class TaskListPage extends StatefulWidget {
   @override
-  State<TaskPage> createState() => _TaskPageState();
+  _TaskListPageState createState() => _TaskListPageState();
 }
 
-class _TaskPageState extends State<TaskPage> {
+class _TaskListPageState extends State<TaskListPage> {
+  final String tasksTable = 'luke_task_app_tasks';
   final TextEditingController _controller = TextEditingController();
   List<Map<String, dynamic>> _tasks = [];
 
@@ -63,35 +54,33 @@ class _TaskPageState extends State<TaskPage> {
   }
 
   Future<void> _loadTasks() async {
-    final response = await Supabase.instance.client.from(tasksTable).select();
+    final res = await Supabase.instance.client.from(tasksTable).select('*').order('id');
     setState(() {
-      _tasks = List<Map<String, dynamic>>.from(response);
+      _tasks = List<Map<String, dynamic>>.from(res);
     });
   }
 
   Future<void> _addTask(String title) async {
-    if (title.trim().isEmpty) return;
+    if (title.isEmpty) return;
     await Supabase.instance.client.from(tasksTable).insert({'title': title});
-    _controller.clear();n    _loadTasks();
+    _controller.clear();
+    await _loadTasks();
   }
 
-  Future<void> _toggleComplete(int id, bool currentStatus) async {
-    await Supabase.instance.client
-        .from(tasksTable)
-        .update({'is_complete': !currentStatus})
-        .eq('id', id);
-    _loadTasks();
+  Future<void> _toggleComplete(int id, bool isComplete) async {
+    await Supabase.instance.client.from(tasksTable).update({'is_complete': !isComplete}).eq('id', id);
+    await _loadTasks();
   }
 
   Future<void> _deleteTask(int id) async {
     await Supabase.instance.client.from(tasksTable).delete().eq('id', id);
-    _loadTasks();
+    await _loadTasks();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ToDo List')),
+      appBar: AppBar(title: Text('Task App')),
       body: Column(
         children: [
           Padding(
@@ -101,13 +90,13 @@ class _TaskPageState extends State<TaskPage> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(hintText: 'Enter task'),
+                    decoration: InputDecoration(hintText: 'Enter task title'),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add),
+                  icon: Icon(Icons.add),
                   onPressed: () => _addTask(_controller.text),
-                ),
+                )
               ],
             ),
           ),
@@ -118,9 +107,7 @@ class _TaskPageState extends State<TaskPage> {
                   title: Text(
                     task['title'],
                     style: TextStyle(
-                      decoration: task['is_complete']
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
+                      decoration: task['is_complete'] ? TextDecoration.lineThrough : null,
                     ),
                   ),
                   leading: Checkbox(
@@ -128,7 +115,7 @@ class _TaskPageState extends State<TaskPage> {
                     onChanged: (_) => _toggleComplete(task['id'], task['is_complete']),
                   ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete),
+                    icon: Icon(Icons.delete),
                     onPressed: () => _deleteTask(task['id']),
                   ),
                 );
