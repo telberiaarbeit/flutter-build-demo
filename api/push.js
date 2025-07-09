@@ -1,7 +1,7 @@
 const fetch = global.fetch || ((...args) =>
   import('node-fetch').then(({ default: fetch }) => fetch(...args)));
 
-const GITHUB_TOKEN = process.env.PERSONAL_ACCESS_TOKEN;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 // Debug: Log token info (never log full token)
 if (!GITHUB_TOKEN) {
