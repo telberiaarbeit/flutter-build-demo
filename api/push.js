@@ -11,8 +11,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Only POST allowed' });
   }
 
-  const { code, secret_code, name_app } = req.body || {};
-
+  const { code, secret_code } = req.body || {};
   if (!code || !secret_code) {
     return res.status(400).json({ error: 'Missing Flutter code or secret_code' });
   }
@@ -36,10 +35,10 @@ export default async function handler(req, res) {
     branchExists = false;
   }
 
-  // Step 2: If branch doesn't exist, clone from web-build
+  // Step 2: If branch doesn't exist, clone from main
   if (!branchExists) {
     try {
-      const mainRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/web-build`, { headers });
+      const mainRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/main`, { headers });
       const mainRef = await mainRefResp.json();
 
       const createBranchResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/refs`, {
@@ -72,25 +71,15 @@ export default async function handler(req, res) {
     console.error('Error fetching file SHA:', err.message);
   }
 
-  // Step 4: Prepend global constants to code
-  const globalVariables = `
-// Auto-generated global variables
-const String SECRET_CODE = '${secret_code}';
-const String NAME_APP = '${name_app || ''}';
-
-`;
-
-  const finalCode = globalVariables + code;
-
-  // Step 5: Prepare PUT body
+  // Step 4: Prepare PUT body
   const body = {
     message: `Update ${FILE_PATH} via API`,
-    content: Buffer.from(finalCode).toString('base64'),
+    content: Buffer.from(code).toString('base64'),
     branch,
     ...(sha ? { sha } : {})
   };
 
-  // Step 6: Push update to GitHub
+  // Step 5: Push update to GitHub
   try {
     const update = await fetch(fileUrl, {
       method: 'PUT',
