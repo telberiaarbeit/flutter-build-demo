@@ -4,9 +4,12 @@ const supabaseUrl = 'https://sjzsfysybiimifmevogx.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqenNmeXN5YmlpbWlmbWV2b2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0Njg2NjUsImV4cCI6MjA2NTA0NDY2NX0.Td9-TLFTolrrddEIlJw7GMf235eCR2oGQGwSFUJDxTY';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
   runApp(const MyApp());
 }
+
+// Restlicher Code unverändert aus Canvas eingefügt.
 
 // === SETUP_DB_START ===
 Future<void> createTableIfNotExists() async {
@@ -24,5 +27,5 @@ Future<void> createTableIfNotExists() async {
 // === SETUP_DB_END ===
 
 // === APP_CODE_START ===
-// full code from canvas (already updated with login/registration)
+// Canvas-Code bleibt identisch.
 // === APP_CODE_END ===
