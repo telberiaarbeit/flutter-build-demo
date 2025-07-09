@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+const supabaseUrl = 'https://ovnhubsupkhesugfrrsv.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqenNmeXN5YmlpbWlmbWV2b2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0Njg2NjUsImV4cCI6MjA2NTA0NDY2NX0.Td9-TLFTolrrddEIlJw7GMf235eCR2oGQGwSFUJDxTY';
 
 
 // === SETUP_DB_START ===
@@ -16,9 +18,6 @@ const List<String> createTableSqls = [
 
 // === APP_CODE_START ===
 
-const supabaseUrl = 'https://ovnhubsupkhesugfrrsv.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqenNmeXN5YmlpbWlmbWV2b2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0Njg2NjUsImV4cCI6MjA2NTA0NDY2NX0.Td9-TLFTolrrddEIlJw7GMf235eCR2oGQGwSFUJDxTY';
-
 final String usersTable = 'hoang_hello_app_users';
 
 void main() async {
@@ -31,7 +30,20 @@ void main() async {
 Future<void> setupDatabase() async {
   final client = Supabase.instance.client;
   for (final sql in createTableSqls) {
-    await client.rpc('execute_sql', params: {'sql': sql});
+    try {
+      final result = await client.rpc('execute_sql', params: {'sql': sql});
+      print('SQL executed successfully: ' + result.toString());
+    } catch (e) {
+      print('Error executing SQL: ' + e.toString());
+    }
+  }
+
+  // Optional: Try to select from the table to confirm it exists
+  try {
+    final res = await client.from('hoang_hello_app_users').select().limit(1);
+    print('Table exists! Query result: ' + res.toString());
+  } catch (e) {
+    print('Table does not exist or query failed: ' + e.toString());
   }
 }
 
