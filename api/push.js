@@ -1,12 +1,22 @@
 const fetch = global.fetch || ((...args) =>
   import('node-fetch').then(({ default: fetch }) => fetch(...args)));
 
-const GITHUB_TOKEN = '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'; // process.env.GITHUB_TOKEN;
+const GITHUB_TOKEN = process.env.PERSONAL_ACCESS_TOKEN;
+
+// Debug: Log token info (never log full token)
+if (!GITHUB_TOKEN) {
+  console.error('GITHUB_TOKEN is not set!');
+} else {
+  console.log('GITHUB_TOKEN is set. Length:', GITHUB_TOKEN.length, 'Starts with:', GITHUB_TOKEN.slice(0, 5));
+}
 const REPO_OWNER = 'telberiaarbeit';
 const REPO_NAME = 'flutter-build-demo';
 const FILE_PATH = 'lib/main.dart';
 
 export default async function handler(req, res) {
+  if (!GITHUB_TOKEN) {
+    return res.status(500).json({ error: 'GITHUB_TOKEN is not set' });
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Only POST allowed' });
   }
