@@ -35,27 +35,35 @@ export default async function handler(req, res) {
     branchExists = false;
   }
 
-  // Step 2: If branch doesn't exist, clone from main
+  // Step 2: If branch doesn't exist, clone from source branch (try 'web-build', then 'main')
   if (!branchExists) {
+    let sourceBranch = 'web-build';
+    let sourceRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/${sourceBranch}`, { headers });
+    let sourceRef = await sourceRefResp.json();
+    if (!sourceRef.object || !sourceRef.object.sha) {
+      // Fallback to 'main' if 'web-build' not found
+      sourceBranch = 'main';
+      sourceRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/${sourceBranch}`, { headers });
+      sourceRef = await sourceRefResp.json();
+      if (!sourceRef.object || !sourceRef.object.sha) {
+        return res.status(500).json({ error: "Neither 'web-build' nor 'main' source branches found", details: { webBuild: sourceRef } });
+      }
+    }
     try {
-      const mainRefResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/main`, { headers });
-      const mainRef = await mainRefResp.json();
-
       const createBranchResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/refs`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
           ref: `refs/heads/${branch}`,
-          sha: mainRef.object.sha
+          sha: sourceRef.object.sha
         })
       });
-
       if (!createBranchResp.ok) {
         const err = await createBranchResp.json();
         return res.status(500).json({ error: 'Branch creation failed', details: err });
       }
     } catch (err) {
-      return res.status(500).json({ error: 'Error cloning branch from main', message: err.message });
+      return res.status(500).json({ error: 'Error cloning branch from source', message: err.message });
     }
   }
 
