@@ -17,7 +17,7 @@ const List<String> createTableSqls = [
 // === APP_CODE_START ===
 
 const supabaseUrl = 'https://ovnhubsupkhesugfrrsv.supabase.co';
-const supabaseAnonKey = 'supabase-anon-key';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqenNmeXN5YmlpbWlmbWV2b2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0Njg2NjUsImV4cCI6MjA2NTA0NDY2NX0.Td9-TLFTolrrddEIlJw7GMf235eCR2oGQGwSFUJDxTY';
 
 final String usersTable = 'hoang_hello_app_users';
 
