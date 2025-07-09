@@ -23655,7 +23655,7 @@ var $async$Vd=A.G(function(a,b){if(a===1)return A.H(b,r)
 while(true)switch(s){case 0:if($.ah==null)A.abo()
 $.ah.toString
 s=2
-return A.C(A.a9B("supabase-anon-key","https://ovnhubsupkhesugfrrsv.supabase.co"),$async$Vd)
+return A.C(A.a9B("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqenNmeXN5YmlpbWlmbWV2b2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0Njg2NjUsImV4cCI6MjA2NTA0NDY2NX0.Td9-TLFTolrrddEIlJw7GMf235eCR2oGQGwSFUJDxTY","https://ovnhubsupkhesugfrrsv.supabase.co"),$async$Vd)
 case 2:s=3
 return A.C(A.akS(),$async$Vd)
 case 3:if($.ah==null)A.abo()
