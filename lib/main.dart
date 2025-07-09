@@ -1,3 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+
 // === SETUP_DB_START ===
 const List<String> createTableSqls = [
   '''
@@ -11,8 +15,6 @@ const List<String> createTableSqls = [
 // === SETUP_DB_END ===
 
 // === APP_CODE_START ===
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 const supabaseUrl = 'https://ovnhubsupkhesugfrrsv.supabase.co';
 const supabaseAnonKey = 'supabase-anon-key';
