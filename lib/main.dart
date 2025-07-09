@@ -1,50 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-const supabaseUrl = 'https://ovnhubsupkhesugfrrsv.supabase.co';
+const supabaseUrl = 'https://sjzsfysybiimifmevogx.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqenNmeXN5YmlpbWlmbWV2b2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0Njg2NjUsImV4cCI6MjA2NTA0NDY2NX0.Td9-TLFTolrrddEIlJw7GMf235eCR2oGQGwSFUJDxTY';
 
-
-// === SETUP_DB_START ===
-const List<String> createTableSqls = [
-  '''
+const String createTableSql = '''
   CREATE TABLE IF NOT EXISTS hoang_hello_app_users (
     id serial primary key,
     email text unique not null,
     password text not null
   );
-  '''
-];
-// === SETUP_DB_END ===
+''';
 
-// === APP_CODE_START ===
+Future<void> createTableIfNotExists() async {
+  final client = Supabase.instance.client;
+  try {
+    final result = await client.rpc('execute_sql', params: {'sql': createTableSql});
+    print('Table creation SQL executed: ' + result.toString());
+  } catch (e) {
+    print('Error executing table creation SQL: ' + e.toString());
+  }
+}
 
 final String usersTable = 'hoang_hello_app_users';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
-  await setupDatabase();
+  await createTableIfNotExists();
   runApp(const MyApp());
-}
-
-Future<void> setupDatabase() async {
-  final client = Supabase.instance.client;
-  for (final sql in createTableSqls) {
-    try {
-      final result = await client.rpc('execute_sql', params: {'sql': sql});
-      print('SQL executed successfully: ' + result.toString());
-    } catch (e) {
-      print('Error executing SQL: ' + e.toString());
-    }
-  }
-
-  // Optional: Try to select from the table to confirm it exists
-  try {
-    final res = await client.from('hoang_hello_app_users').select().limit(1);
-    print('Table exists! Query result: ' + res.toString());
-  } catch (e) {
-    print('Table does not exist or query failed: ' + e.toString());
-  }
 }
 
 class MyApp extends StatelessWidget {
