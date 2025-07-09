@@ -1,50 +1,28 @@
-const SUPABASE_URL = 'https://vzusoizwmnarilhtmzuc.supabase.co';
-const SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6dXNvaXp3bW5hcmlsaHRtenVjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTUzMTk3OCwiZXhwIjoyMDY3MTA3OTc4fQ.ZOMX31qS82NAyjsTh5XfG0ZfMM_YG_nSH4GsqBgexGo";
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export default async function handler(req, res) {
-    const { method, query } = req;
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Only POST allowed' });
+  }
 
-    let sql = '';
-    if (method === 'POST') {
-        try {
-            const body = await req.json?.();
-            sql = body?.sql || '';
-        } catch (e) {
-            return res.status(400).json({ error: 'Invalid JSON body' });
-        }
-    } else if (method === 'GET') {
-        sql = query.sql;
-    } else {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+  const { secret_code, name_app, table_name, columns } = req.body || {};
+  if (!secret_code || !name_app || !table_name || !columns) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
 
-    if (!sql) {
-        return res.status(400).json({ error: 'Missing SQL query' });
-    }
+  // Build safe table name
+  const newTableName = `${secret_code}_${name_app}_${table_name}`.replace(/[^a-zA-Z0-9_]/g, '_');
+  const columnsSql = columns.map(col => `${col.name} ${col.type}`).join(', ');
+  const sql = `CREATE TABLE IF NOT EXISTS "${newTableName}" (${columnsSql});`;
 
-    try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/execute_sql`, {
-            method: 'POST',
-            headers: {
-                apikey: SERVICE_ROLE_KEY,
-                Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ sql }),
-        });
-
-        const resultText = await response.text();
-        const result = resultText ? JSON.parse(resultText) : {};
-
-        if (!response.ok) {
-            return res.status(500).json({
-                error: '❌ Failed to execute SQL',
-                detail: result,
-            });
-        }
-
-        return res.status(200).json({ message: '✅ SQL executed successfully' });
-    } catch (err) {
-        return res.status(500).json({ error: '❌ Unexpected server error', details: err.message });
-    }
+  // Call Supabase function to execute SQL
+  const { error } = await supabase.rpc('execute_sql', { sql });
+  if (error) {
+    return res.status(500).json({ error: 'Table creation failed', details: error });
+  }
+  return res.status(200).json({ status: 'success', message: `Table ${newTableName} created.` });
 }
