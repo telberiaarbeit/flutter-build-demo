@@ -1,7 +1,7 @@
 const fetch = global.fetch || ((...args) =>
   import('node-fetch').then(({ default: fetch }) => fetch(...args)));
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_TOKEN = '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'; // process.env.GITHUB_TOKEN;
 const REPO_OWNER = 'telberiaarbeit';
 const REPO_NAME = 'flutter-build-demo';
 const FILE_PATH = 'lib/main.dart';
