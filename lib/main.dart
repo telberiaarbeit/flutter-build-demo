@@ -5,7 +5,7 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 // === SETUP_DB_START ===
 const String createTableSql = '''
-  CREATE TABLE IF NOT EXISTS hoang_hoang_app_users (
+  CREATE TABLE IF NOT EXISTS hoang_demo_users (
     id serial primary key,
     email text unique not null,
     password text not null
@@ -13,12 +13,7 @@ const String createTableSql = '''
 ''';
 
 Future<void> createTableIfNotExists() async {
-  final response = await Supabase.instance.client.rpc('execute_sql', params: {
-    'sql': createTableSql,
-  });
-  if (response.error != null) {
-    throw response.error!;
-  }
+  await Supabase.instance.client.rpc('execute_sql', params: {'sql': createTableSql});
 }
 // === SETUP_DB_END ===
 
@@ -35,7 +30,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Login App',
-      theme: ThemeData(primarySwatch: Colors.blue),
       home: LoginPage(),
     );
   }
@@ -47,13 +41,12 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  String message = '';
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final String usersTable = 'hoang_demo_users';
+  String _message = '';
 
-  final String usersTable = 'hoang_hoang_app_users';
-
-  Future<void> login() async {
+  Future<void> _login() async {
     final email = _emailController.text;
     final password = _passwordController.text;
 
@@ -65,40 +58,47 @@ class _LoginPageState extends State<LoginPage> {
         .maybeSingle();
 
     if (response != null) {
-      setState(() => message = 'Login successful!');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomePage(email: email)),
+      );
     } else {
-      setState(() => message = 'Invalid email or password');
+      setState(() {
+        _message = 'Invalid credentials';
+      });
+    }
+  }
+
+  Future<void> _signup() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    try {
+      await Supabase.instance.client.from(usersTable).insert({
+        'email': email,
+        'password': password,
+      });
+      setState(() => _message = 'User registered!');
+    } catch (e) {
+      setState(() => _message = 'Sign up failed: ${e.toString()}');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(title: Text('Login Page')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(onPressed: login, child: Text('Login')),
-            TextButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => RegisterPage()),
-              ),
-              child: Text('No account? Register here'),
-            ),
-            SizedBox(height: 20),
-            Text(message),
+            TextField(controller: _emailController, decoration: InputDecoration(labelText: 'Email')),
+            TextField(controller: _passwordController, decoration: InputDecoration(labelText: 'Password'), obscureText: true),
+            SizedBox(height: 16),
+            ElevatedButton(onPressed: _login, child: Text('Login')),
+            TextButton(onPressed: _signup, child: Text('Sign Up')),
+            SizedBox(height: 16),
+            Text(_message),
           ],
         ),
       ),
@@ -106,65 +106,30 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class RegisterPage extends StatefulWidget {
-  @override
-  _RegisterPageState createState() => _RegisterPageState();
-}
+class HomePage extends StatelessWidget {
+  final String email;
 
-class _RegisterPageState extends State<RegisterPage> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  String message = '';
-
-  final String usersTable = 'hoang_hoang_app_users';
-
-  Future<void> register() async {
-    final email = _emailController.text;
-    final password = _passwordController.text;
-
-    final exists = await Supabase.instance.client
-        .from(usersTable)
-        .select()
-        .eq('email', email)
-        .maybeSingle();
-
-    if (exists != null) {
-      setState(() => message = 'Email already exists.');
-    } else {
-      final response = await Supabase.instance.client.from(usersTable).insert({
-        'email': email,
-        'password': password,
-      });
-      if (response.error == null) {
-        setState(() => message = 'Registered successfully!');
-        Future.delayed(Duration(seconds: 1), () => Navigator.pop(context));
-      } else {
-        setState(() => message = 'Registration failed');
-      }
-    }
-  }
+  const HomePage({required this.email});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Register')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      appBar: AppBar(title: Text('Welcome')),
+      body: Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
+            Text('Logged in as: ' + email, style: TextStyle(fontSize: 18)),
             SizedBox(height: 20),
-            ElevatedButton(onPressed: register, child: Text('Register')),
-            SizedBox(height: 20),
-            Text(message),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                );
+              },
+              child: Text('Logout'),
+            )
           ],
         ),
       ),
