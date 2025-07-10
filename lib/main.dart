@@ -8,7 +8,10 @@ const String createTableSql = '''
   CREATE TABLE IF NOT EXISTS hoang_demo_users (
     id serial primary key,
     email text unique not null,
-    password text not null
+    password text not null,
+    full_name text,
+    phone text,
+    role text
   );
 ''';
 
@@ -43,6 +46,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _fullNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  String _selectedRole = 'User';
   final String usersTable = 'hoang_demo_users';
   String _message = '';
 
@@ -72,11 +79,22 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _signup() async {
     final email = _emailController.text;
     final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+    final fullName = _fullNameController.text;
+    final phone = _phoneController.text;
+
+    if (password != confirmPassword) {
+      setState(() => _message = 'Passwords do not match');
+      return;
+    }
 
     try {
       await Supabase.instance.client.from(usersTable).insert({
         'email': email,
         'password': password,
+        'full_name': fullName,
+        'phone': phone,
+        'role': _selectedRole,
       });
       setState(() => _message = 'User registered!');
     } catch (e) {
@@ -88,12 +106,20 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Login Page')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(controller: _emailController, decoration: InputDecoration(labelText: 'Email')),
             TextField(controller: _passwordController, decoration: InputDecoration(labelText: 'Password'), obscureText: true),
+            TextField(controller: _confirmPasswordController, decoration: InputDecoration(labelText: 'Confirm Password'), obscureText: true),
+            TextField(controller: _fullNameController, decoration: InputDecoration(labelText: 'Full Name')),
+            TextField(controller: _phoneController, decoration: InputDecoration(labelText: 'Phone Number')),
+            DropdownButton<String>(
+              value: _selectedRole,
+              items: ['User', 'Admin'].map((role) => DropdownMenuItem(value: role, child: Text(role))).toList(),
+              onChanged: (value) => setState(() => _selectedRole = value!),
+            ),
             SizedBox(height: 16),
             ElevatedButton(onPressed: _login, child: Text('Login')),
             TextButton(onPressed: _signup, child: Text('Sign Up')),
