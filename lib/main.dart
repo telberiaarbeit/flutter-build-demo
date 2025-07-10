@@ -32,23 +32,90 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Hello App',
-      home: const HelloPage(),
+      title: 'Login App',
+      home: const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class HelloPage extends StatelessWidget {
-  const HelloPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  String message = '';
+
+  final String usersTable = 'hoang_my_app_test_users';
+
+  Future<void> signUp() async {
+    final email = emailController.text;
+    final password = passwordController.text;
+    final existing = await Supabase.instance.client
+        .from(usersTable)
+        .select()
+        .eq('email', email)
+        .maybeSingle();
+
+    if (existing != null) {
+      setState(() => message = 'Email đã tồn tại');
+      return;
+    }
+
+    await Supabase.instance.client.from(usersTable).insert({
+      'email': email,
+      'password': password,
+    });
+
+    setState(() => message = 'Đăng ký thành công!');
+  }
+
+  Future<void> login() async {
+    final email = emailController.text;
+    final password = passwordController.text;
+
+    final user = await Supabase.instance.client
+        .from(usersTable)
+        .select()
+        .eq('email', email)
+        .eq('password', password)
+        .maybeSingle();
+
+    setState(() => message =
+        user != null ? 'Đăng nhập thành công!' : 'Sai thông tin đăng nhập');
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'Hello from Supabase!',
-          style: TextStyle(fontSize: 24),
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: true,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(onPressed: signUp, child: const Text('Đăng ký')),
+            ElevatedButton(onPressed: login, child: const Text('Đăng nhập')),
+            const SizedBox(height: 20),
+            Text(
+              message,
+              style: const TextStyle(color: Colors.blue),
+            ),
+          ],
         ),
       ),
     );
