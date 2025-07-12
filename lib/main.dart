@@ -120,6 +120,11 @@ class DatabaseService {
     final List<Map<String, dynamic>> maps = await db.query('patrick11_zeiterfassung_timelogs', orderBy: 'start_time DESC');
     return maps.map((e) => TimeLog.fromMap(e)).toList();
   }
+
+  static Future<void> deleteTimeLog(int id) async {
+    final db = await database;
+    await db.delete('patrick11_zeiterfassung_timelogs', where: 'id = ?', whereArgs: [id]);
+  }
 }
 
 final projectsProvider = FutureProvider<List<Project>>((ref) async {
@@ -225,10 +230,24 @@ class _TimeTrackingScreenState extends ConsumerState<TimeTrackingScreen> {
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final log = items[index];
-                  return ListTile(
-                    title: Text('Projekt-ID: ${log.projectId}'),
-                    subtitle: Text(
-                      '${DateFormat.yMd().add_Hm().format(log.startTime)} - ${log.endTime != null ? DateFormat.Hm().format(log.endTime!) : 'läuft...'} (${log.durationMinutes ?? '-'} min)',
+                  return Dismissible(
+                    key: ValueKey(log.id),
+                    background: Container(
+                      color: Colors.red,
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.only(left: 16),
+                      child: const Icon(Icons.delete, color: Colors.white),
+                    ),
+                    direction: DismissDirection.startToEnd,
+                    onDismissed: (direction) async {
+                      await DatabaseService.deleteTimeLog(log.id!);
+                      ref.refresh(timeLogsProvider);
+                    },
+                    child: ListTile(
+                      title: Text('Projekt-ID: ${log.projectId}'),
+                      subtitle: Text(
+                        '${DateFormat.yMd().add_Hm().format(log.startTime)} - ${log.endTime != null ? DateFormat.Hm().format(log.endTime!) : 'läuft...'} (${log.durationMinutes ?? '-'} min)',
+                      ),
                     ),
                   );
                 },
