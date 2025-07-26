@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
       title: 'Hello World App',
       home: Scaffold(
         appBar: AppBar(title: const Text('Hello World App')),
-        body: const Center(child: Text('Hello, World!')),
+        body: const Center(child: Text('Hello, Patrick and Akshay!')),
       ),
     );
   }
