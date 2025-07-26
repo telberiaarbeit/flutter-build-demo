@@ -1,21 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+const supabaseUrl = 'https://sjzsfysybiimifmevogx.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqenNmeXN5YmlpbWlmbWV2b2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0Njg2NjUsImV4cCI6MjA2NTA0NDY2NX0.Td9-TLFTolrrddEIlJw7GMf235eCR2oGQGwSFUJDxTY';
 
-void main() {
-  runApp(const MyApp());
+// === SETUP_DB_START ===
+Future<void> createTableIfNotExists() async {
+  const String createTableSql = 'CREATE TABLE IF NOT EXISTS akshay_akshay_users (id serial primary key, email text unique not null, password text not null);';
+
+  final response = await Supabase.instance.client.rpc("execute_sql", params: {"sql": createTableSql}).execute();
+
+  if (response.error != null) {
+    throw Exception('Failed to create table: ' + response.error!.message);
+  }
+}
+// === SETUP_DB_END ===
+
+// === APP_CODE_START ===
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+  await createTableIfNotExists();
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String secretCode = 'akshay';
+  final String appName = 'akshay';
+  final String usersTable = 'akshay_akshay_users';
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Customer1 App')),
-        body: const Center(
-          child: Text('Welcome to Customer1 App!'),
-        ),
+        appBar: AppBar(title: Text('Akshay')),
+        body: Center(child: Text('Hello, World!')),
       ),
     );
   }
 }
+// === APP_CODE_END ===
