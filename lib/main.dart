@@ -28,12 +28,46 @@ class MyApp extends StatelessWidget {
   final String appName = 'akshay';
   final String usersTable = 'akshay_akshay_users';
 
+  void _showHelloPatrick(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Hello Patrick'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: Text('Akshay')),
-        body: Center(child: Text('Hello, World!')),
+      home: Builder(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: Text('Akshay')),
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Hello, World!'),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => _showHelloPatrick(context),
+                  child: Text('Button 1'),
+                ),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () => _showHelloPatrick(context),
+                  child: Text('Button 2'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
